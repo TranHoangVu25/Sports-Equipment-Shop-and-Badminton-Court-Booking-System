@@ -1,0 +1,5 @@
+tải thư viện để chạy file crawl-sitemap.js
+npm init -y
+npm install axios xml2js fs
+https://shopvnb.com/sitemaps.xml
+
