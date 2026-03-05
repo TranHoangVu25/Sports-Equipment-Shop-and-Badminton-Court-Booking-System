@@ -1,0 +1,49 @@
+package com.thv.sport.system.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "booking_payment")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class BookingPayment {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "booking_payment_id")
+    private Long bookingPaymentId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
+
+    @Column(name = "amount", precision = 10, scale = 2, nullable = false)
+    private BigDecimal amount;
+
+    @Column(name = "currency", length = 255, nullable = false)
+    private String currency;
+
+    @Column(name = "payment_method", length = 255, nullable = false)
+    private String paymentMethod;
+
+    @Column(name = "provider_payment_id", length = 255)
+    private String providerPaymentId;
+
+    @Column(name = "status", length = 255, nullable = false)
+    private String status;
+
+    @Column(name = "failure_reason", length = 255)
+    private String failureReason;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}
+
