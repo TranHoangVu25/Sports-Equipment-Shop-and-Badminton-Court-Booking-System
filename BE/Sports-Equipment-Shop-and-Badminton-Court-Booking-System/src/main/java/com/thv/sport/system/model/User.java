@@ -3,6 +3,7 @@ package com.thv.sport.system.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "\"user\"")
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -17,16 +19,16 @@ public class User {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "email", length = 255, nullable = false)
+    @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "full_name", length = 255, nullable = false)
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "encrypted_password", length = 255, nullable = false)
+    @Column(name = "encrypted_password", nullable = false)
     private String encryptedPassword;
 
-    @Column(name = "confirmation_token", length = 255)
+    @Column(name = "confirmation_token")
     private String confirmationToken;
 
     @Column(name = "confirmed_at")
@@ -38,20 +40,36 @@ public class User {
     @Column(name = "last_sign_in_at")
     private LocalDateTime lastSignInAt;
 
-    @Column(name = "dob", length = 255)
+    @Column(name = "locked_at")
+    private LocalDateTime lockedAt;
+
+    @Column(name = "dob")
     private String dob;
 
-    @Column(name = "jti", length = 255)
+    @Column(name = "jti")
     private String jti;
 
-    @Column(name = "phone_number", length = 255)
+    @Column(name = "phone_number")
     private String phoneNumber;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    @Column(name = "confirm_forgot_token")
+    private String confirmForgot;
+
+    @Column(name = "confirm_forgot_expired")
+    private LocalDateTime confirmForgotExpired;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "role", nullable = false)
+    private String role;
+
+    // Relationship
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonManagedReference
+    private List<Address> addresses;
 }
 

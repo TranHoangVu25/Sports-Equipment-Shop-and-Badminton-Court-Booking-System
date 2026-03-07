@@ -1,4 +1,4 @@
-package com.thv.sport.system.dto.response;
+package com.thv.sport.system.dto.response.product;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
