@@ -2,6 +2,7 @@ package com.thv.sport.system.service.impl;
 
 import com.thv.sport.system.dto.request.cart.CartItemRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.cart.CartDetailResponse;
 import com.thv.sport.system.exception.ErrorCode;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
@@ -184,10 +185,35 @@ public class CartServiceImpl implements CartService {
         );
     }
 
-    @Override
-    public Cart findByUserId(Integer userId) {
-        return cartRepository.findByUserId(Long.valueOf(userId))
-                .orElseThrow(() -> new RuntimeException("User id not found"));
+    public ResponseEntity<ApiResponse<CartDetailResponse>> findByCartUserId(Integer userId) {
+
+        Cart cart = cartRepository.findByUserId(Long.valueOf(userId))
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
+            return ResponseEntity.ok(
+                    ApiResponse.<CartDetailResponse>builder()
+                            .message("Không có sản phẩm nào trong giỏ hàng của bạn")
+                            .build()
+            );
+        }
+
+        BigDecimal totalPrice = cart.getCartItems().stream()
+                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        CartDetailResponse response = CartDetailResponse.builder()
+                .cartId(cart.getCartId())
+                .cartItems(cart.getCartItems())
+                .totalPrice(totalPrice)
+                .build();
+
+        return ResponseEntity.ok(
+                ApiResponse.<CartDetailResponse>builder()
+                        .message("Lấy giỏ hàng thành công")
+                        .result(response)
+                        .build()
+        );
     }
 
     @Override

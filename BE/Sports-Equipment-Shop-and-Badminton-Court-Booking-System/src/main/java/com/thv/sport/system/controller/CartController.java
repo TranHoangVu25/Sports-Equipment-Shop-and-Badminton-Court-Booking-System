@@ -3,6 +3,7 @@ package com.thv.sport.system.controller;
 import com.thv.sport.system.config.security.UserPrincipal;
 import com.thv.sport.system.dto.request.cart.CartItemRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.cart.CartDetailResponse;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
 import com.thv.sport.system.respository.CartRepository;
@@ -52,10 +53,10 @@ public class CartController {
 
     // lấy cart theo user
     @GetMapping("/get-user-cart")
-    public Cart getCart(@AuthenticationPrincipal UserPrincipal user) {
-
+    public
+    ResponseEntity<ApiResponse<CartDetailResponse>> getCart(@AuthenticationPrincipal UserPrincipal user) {
         Integer userId = user.getUserId();
-        return cartService.findByUserId(userId);
+        return cartService.findByCartUserId(userId);
     }
 
     // tất cả cart
