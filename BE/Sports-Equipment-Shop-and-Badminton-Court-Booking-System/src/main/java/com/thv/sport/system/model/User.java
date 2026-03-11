@@ -1,5 +1,7 @@
 package com.thv.sport.system.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -17,6 +19,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
+
     private Long userId;
 
     @Column(name = "email", nullable = false)
@@ -69,7 +72,7 @@ public class User {
 
     // Relationship
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JsonManagedReference
+    @JsonIgnore
     private List<Address> addresses;
 }
 

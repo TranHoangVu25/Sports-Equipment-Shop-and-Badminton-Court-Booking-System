@@ -43,10 +43,6 @@ public class Constants {
         public static final String API_ADDRESS = API_BASE + "/addresses";
         public static final String API_AUTH = API_BASE + "/auth";
 
-        // Role and Permission APIs
-        public static final String API_ROLE = API_BASE + "/roles";
-        public static final String API_PERMISSION = API_BASE + "/permissions";
-
         // Payment APIs
         public static final String API_PAYMENT = API_BASE + "/payments";
 

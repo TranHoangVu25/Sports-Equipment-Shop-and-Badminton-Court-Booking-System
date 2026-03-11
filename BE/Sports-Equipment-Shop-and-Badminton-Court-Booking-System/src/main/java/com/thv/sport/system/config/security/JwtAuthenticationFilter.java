@@ -7,7 +7,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,6 +18,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final InvalidatedTokenRepository invalidatedTokenRepository;
@@ -40,37 +43,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
+
             String token = authHeader.substring(7);
 
             try {
+
                 SignedJWT signedJWT = SignedJWT.parse(token);
                 JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
 
                 String email = claims.getSubject();
+                String role = (String) claims.getClaim("role");
                 String jti = claims.getJWTID();
+
+                // lấy userId từ JWT
+                Integer userId = ((Number) claims.getClaim("userId")).intValue();
 
                 // check blacklist
                 if (jti != null && invalidatedTokenRepository.existsById(jti)) {
-                    // token bị logout sẽ k sử dụng đc
                     filterChain.doFilter(request, response);
                     return;
                 }
 
+                // tạo principal
+                UserPrincipal principal = new UserPrincipal(userId, email);
+
+                SimpleGrantedAuthority authority =
+                        new SimpleGrantedAuthority(role);
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                email,
+                                principal,
                                 null,
-                                List.of()
+                                List.of(authority)
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (Exception e) {
-                logger.warn("Ignore invalid JWT: {}"+ e.getMessage());
+                log.warn("Invalid JWT: {}", e.getMessage());
             }
         }
 
         filterChain.doFilter(request, response);
     }
 }
-
