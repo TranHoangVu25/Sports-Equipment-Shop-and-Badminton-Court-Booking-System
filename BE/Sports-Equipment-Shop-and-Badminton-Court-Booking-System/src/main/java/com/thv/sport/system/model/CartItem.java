@@ -1,6 +1,8 @@
 package com.thv.sport.system.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -27,7 +29,7 @@ public class CartItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    @JsonIgnore
+    @JsonBackReference
     private Product product;
 
     @Column(name = "name", nullable = false)
@@ -44,4 +46,9 @@ public class CartItem {
 
     @Column(name = "description")
     private String description;
+
+    @JsonProperty("productId")
+    public Long getProductId() {
+        return product != null ? product.getProductId() : null;
+    }
 }

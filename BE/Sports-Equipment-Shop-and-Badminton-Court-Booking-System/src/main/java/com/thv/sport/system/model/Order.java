@@ -1,9 +1,12 @@
 package com.thv.sport.system.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -20,13 +23,15 @@ public class Order {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "promotion_id", nullable = false)
+    @JoinColumn(name = "promotion_id")
+    @JsonBackReference
     private Promotion promotion;
 
-    @Column(name = "status", length = 255, nullable = false)
+    @Column(name = "status", nullable = false)
     private String status;
 
     @Column(name = "created_at", nullable = false)
@@ -37,5 +42,9 @@ public class Order {
 
     @Column(name = "total_amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalAmount;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<OrderItem> orderItems;
 }
 
