@@ -2,7 +2,8 @@ package com.thv.sport.system.service.impl;
 
 import com.thv.sport.system.dto.request.cart.CartItemRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
-import com.thv.sport.system.dto.response.cart.CartDetailResponse;
+import com.thv.sport.system.dto.response.cart.CartResponse;
+import com.thv.sport.system.dto.response.cart.CartItemResponse;
 import com.thv.sport.system.exception.ErrorCode;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
@@ -132,13 +133,11 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<CartItem>> updateQuantity(Integer userId, CartItemRequest request) {
+    public ResponseEntity<ApiResponse<CartItemResponse>> updateQuantity(Integer userId, CartItemRequest request) {
 
-        // 1. Kiểm tra cart của user
         Cart cart = cartRepository.findByUserId(Long.valueOf(userId))
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
-        // 2. Tìm cartItem theo id
         CartItem cartItem = cart.getCartItems().stream()
                 .filter(item -> item.getCartItemId().equals(Long.valueOf(request.getId())))
                 .findFirst()
@@ -146,29 +145,32 @@ public class CartServiceImpl implements CartService {
 
         int currentQuantity = cartItem.getQuantity();
 
-        // 3. Nếu plus = true -> tăng
+        // tăng số lượng
         if (request.isPlus()) {
+
             cartItem.setQuantity(currentQuantity + 1);
             CartItem savedItem = cartItemRepository.save(cartItem);
 
+            CartItemResponse response = mapToResponse(savedItem);
+
             return ResponseEntity.ok(
-                    ApiResponse.<CartItem>builder()
+                    ApiResponse.<CartItemResponse>builder()
                             .message("Increase quantity successfully")
-                            .result(savedItem)
+                            .result(response)
                             .build()
             );
         }
 
-        // 4. Nếu plus = false -> giảm
+        // giảm số lượng
         int newQuantity = currentQuantity - 1;
 
-        // Nếu quantity = 0 -> xóa khỏi cart
+        // nếu = 0 thì xóa
         if (newQuantity <= 0) {
             cart.getCartItems().remove(cartItem);
             cartItemRepository.delete(cartItem);
 
             return ResponseEntity.ok(
-                    ApiResponse.<CartItem>builder()
+                    ApiResponse.<CartItemResponse>builder()
                             .message("Item removed from cart")
                             .build()
             );
@@ -177,22 +179,35 @@ public class CartServiceImpl implements CartService {
         cartItem.setQuantity(newQuantity);
         CartItem savedItem = cartItemRepository.save(cartItem);
 
+        CartItemResponse response = mapToResponse(savedItem);
+
         return ResponseEntity.ok(
-                ApiResponse.<CartItem>builder()
+                ApiResponse.<CartItemResponse>builder()
                         .message("Decrease quantity successfully")
-                        .result(savedItem)
+                        .result(response)
                         .build()
         );
     }
 
-    public ResponseEntity<ApiResponse<CartDetailResponse>> findByCartUserId(Integer userId) {
+    private CartItemResponse mapToResponse(CartItem item) {
+        return CartItemResponse.builder()
+                .cartItemId(item.getCartItemId())
+                .productId(item.getProduct().getProductId())
+                .name(item.getName())
+                .price(item.getPrice())
+                .quantity(item.getQuantity())
+                .image(item.getImage())
+                .description(item.getDescription())
+                .build();
+    }
+    public ResponseEntity<ApiResponse<CartResponse>> findByCartUserId(Integer userId) {
 
         Cart cart = cartRepository.findByUserId(Long.valueOf(userId))
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
         if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
             return ResponseEntity.ok(
-                    ApiResponse.<CartDetailResponse>builder()
+                    ApiResponse.<CartResponse>builder()
                             .message("Không có sản phẩm nào trong giỏ hàng của bạn")
                             .build()
             );
@@ -202,14 +217,27 @@ public class CartServiceImpl implements CartService {
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        CartDetailResponse response = CartDetailResponse.builder()
+        // map CartItem -> CartItemResponse
+        List<CartItemResponse> cartItemResponses = cart.getCartItems().stream()
+                .map(item -> CartItemResponse.builder()
+                        .cartItemId(item.getCartItemId())
+                        .productId(item.getProduct().getProductId())
+                        .name(item.getName())
+                        .price(item.getPrice())
+                        .quantity(item.getQuantity())
+                        .image(item.getImage())
+                        .description(item.getDescription())
+                        .build())
+                .toList();
+
+        CartResponse response = CartResponse.builder()
                 .cartId(cart.getCartId())
-                .cartItems(cart.getCartItems())
+                .cartItems(cartItemResponses)
                 .totalPrice(totalPrice)
                 .build();
 
         return ResponseEntity.ok(
-                ApiResponse.<CartDetailResponse>builder()
+                ApiResponse.<CartResponse>builder()
                         .message("Lấy giỏ hàng thành công")
                         .result(response)
                         .build()

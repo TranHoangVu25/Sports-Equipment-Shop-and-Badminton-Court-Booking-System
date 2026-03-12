@@ -3,7 +3,8 @@ package com.thv.sport.system.service;
 
 import com.thv.sport.system.dto.request.cart.CartItemRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
-import com.thv.sport.system.dto.response.cart.CartDetailResponse;
+import com.thv.sport.system.dto.response.cart.CartResponse;
+import com.thv.sport.system.dto.response.cart.CartItemResponse;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +25,9 @@ public interface CartService {
 
     ResponseEntity<ApiResponse<String>> deleteCartItem(Integer userId, String productionId);
 
-    ResponseEntity<ApiResponse<CartItem>> updateQuantity(Integer userId, CartItemRequest request);
+    ResponseEntity<ApiResponse<CartItemResponse>> updateQuantity(Integer userId, CartItemRequest request);
 
-    ResponseEntity<ApiResponse<CartDetailResponse>> findByCartUserId(Integer userId);
+    ResponseEntity<ApiResponse<CartResponse>> findByCartUserId(Integer userId);
 
     Cart findByUserIdToCreate(Integer userId);
 

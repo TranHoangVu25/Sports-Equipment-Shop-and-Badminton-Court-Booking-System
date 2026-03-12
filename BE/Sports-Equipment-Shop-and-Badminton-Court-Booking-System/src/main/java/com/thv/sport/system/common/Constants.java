@@ -34,7 +34,7 @@ public class Constants {
         public static final String API_ORDER_ITEM = API_BASE + "/order-items";
 
         // Cart APIs
-        public static final String API_CART = API_BASE + "/carts";
+        public static final String API_CART = API_BASE + "/cart";
         public static final String API_CART_ITEM = API_BASE + "/cart-items";
 
         // User Management APIs
@@ -154,6 +154,11 @@ public class Constants {
         public static final int DESCRIPTION_MAX_LENGTH = 1000;
         public static final int PASSWORD_MIN_LENGTH = 8;
         public static final int PASSWORD_MAX_LENGTH = 50;
+    }
+
+    public static class CheckoutMethod {
+        public static final String COD = "COD";
+        public static final String STRIPE = "STRIPE";
     }
 }
 

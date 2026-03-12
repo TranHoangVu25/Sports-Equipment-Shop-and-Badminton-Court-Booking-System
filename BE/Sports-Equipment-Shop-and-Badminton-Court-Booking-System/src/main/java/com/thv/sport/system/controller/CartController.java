@@ -1,11 +1,12 @@
 package com.thv.sport.system.controller;
 
+import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.config.security.UserPrincipal;
 import com.thv.sport.system.dto.request.cart.CartItemRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
-import com.thv.sport.system.dto.response.cart.CartDetailResponse;
+import com.thv.sport.system.dto.response.cart.CartResponse;
+import com.thv.sport.system.dto.response.cart.CartItemResponse;
 import com.thv.sport.system.model.Cart;
-import com.thv.sport.system.model.CartItem;
 import com.thv.sport.system.respository.CartRepository;
 import com.thv.sport.system.service.CartService;
 import jakarta.validation.Valid;
@@ -22,12 +23,11 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RestController
-@RequestMapping("/api/v1/cart")
+@RequestMapping(Constants.ApiPath.API_CART)
 @Slf4j
 public class CartController {
 
     CartService cartService;
-    CartRepository repository;
 
     // tạo cart nếu chưa có
     @GetMapping
@@ -54,7 +54,7 @@ public class CartController {
     // lấy cart theo user
     @GetMapping("/get-user-cart")
     public
-    ResponseEntity<ApiResponse<CartDetailResponse>> getCart(@AuthenticationPrincipal UserPrincipal user) {
+    ResponseEntity<ApiResponse<CartResponse>> getCart(@AuthenticationPrincipal UserPrincipal user) {
         Integer userId = user.getUserId();
         return cartService.findByCartUserId(userId);
     }
@@ -63,20 +63,6 @@ public class CartController {
     @GetMapping("/get-carts")
     public List<Cart> getAllCart() {
         return cartService.findAllCart();
-    }
-
-    // thêm item vào cart
-    @PostMapping
-    public Cart createCartItem(
-            @RequestBody @Valid CartItem cartItem,
-            @AuthenticationPrincipal UserPrincipal user
-    ) {
-
-        Integer userId = user.getUserId();
-
-        log.info("Add product: {}", cartItem.getName());
-
-        return cartService.createCartItem(userId, cartItem);
     }
 
     // xóa cart item
@@ -92,7 +78,7 @@ public class CartController {
 
     // update quantity
     @PutMapping("/cart-items")
-    public ResponseEntity<ApiResponse<CartItem>> updateCartItem(
+    public ResponseEntity<ApiResponse<CartItemResponse>> updateCartItem(
             @AuthenticationPrincipal UserPrincipal user,
             @RequestBody @Valid CartItemRequest request
     ) {
