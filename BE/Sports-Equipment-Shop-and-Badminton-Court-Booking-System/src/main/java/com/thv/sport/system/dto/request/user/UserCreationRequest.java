@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -27,5 +28,6 @@ public class UserCreationRequest {
     private String role = "user";
     private Integer signInCount;
     private LocalDateTime currentSignInAt;
-    private LocalDateTime dob;
+    private String dob;
+    private String phoneNumber;
 }

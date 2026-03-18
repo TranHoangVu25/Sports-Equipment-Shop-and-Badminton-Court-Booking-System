@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -70,9 +72,10 @@ public class User {
     @Column(name = "role", nullable = false)
     private String role;
 
-    // Relationship
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Address> addresses;
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "location")
+    private String location;
 }
 

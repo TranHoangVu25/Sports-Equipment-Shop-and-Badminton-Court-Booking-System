@@ -1,6 +1,5 @@
 package com.thv.sport.system.dto.response.user;
 
-import com.thv.sport.system.model.Address;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,5 +24,8 @@ public class UserResponse {
     LocalDateTime lockedAt;
     LocalDateTime createdAt;
     LocalDateTime lastSignInAt;
-    List<Address> addresses;
+    private String location;
+    private String phoneNumber;
+    private String gender;
+    private String dob;
 }

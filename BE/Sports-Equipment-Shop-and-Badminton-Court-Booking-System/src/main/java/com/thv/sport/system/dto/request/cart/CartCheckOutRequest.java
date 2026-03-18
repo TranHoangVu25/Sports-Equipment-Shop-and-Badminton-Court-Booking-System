@@ -1,6 +1,5 @@
 package com.thv.sport.system.dto.request.cart;
 
-import com.thv.sport.system.model.Address;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +16,5 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CartCheckOutRequest {
     List<CheckoutItemRequest> items;
-    Address address;
     //String promotion;
 }

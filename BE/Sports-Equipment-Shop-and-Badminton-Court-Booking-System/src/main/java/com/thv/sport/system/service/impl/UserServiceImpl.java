@@ -1,6 +1,7 @@
 package com.thv.sport.system.service.impl;
 
 
+import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.dto.request.user.UserCreationRequest;
 import com.thv.sport.system.dto.request.user.UserUpdateRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
@@ -20,8 +21,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -102,7 +105,7 @@ public class UserServiceImpl implements UserService {
         //mã hóa mật khẩu
         String password = passwordEncoder.encode(request.getEncryptedPassword());
 
-        User user = new User().builder()
+        User user = User.builder()
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .jti(jit)
@@ -111,8 +114,9 @@ public class UserServiceImpl implements UserService {
                 .confirmationSentAt(LocalDateTime.now())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .role(request.getRole())
-                .dob(String.valueOf(request.getDob()))
+                .role(Constants.Role.USER)
+                .phoneNumber(request.getPhoneNumber())
+                .dob(request.getDob())
                 .build();
 
         userRepository.save(user);
@@ -135,7 +139,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<User>> updateUser(UserUpdateRequest request, Long userId) {
+    public ResponseEntity<ApiResponse<User>> updateUserWithAdminRole(UserUpdateRequest request, Long userId) {
         try {
         //Trường hợp userId không tồn tại
         if (!userRepository.existsById(userId)){
@@ -271,7 +275,7 @@ public class UserServiceImpl implements UserService {
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .role(request.getRole())
-                    .dob(String.valueOf(request.getDob()))
+                    .dob(request.getDob())
                     .build();
 
             User savedUser = userRepository.save(user);
@@ -353,7 +357,10 @@ public class UserServiceImpl implements UserService {
                 .createdAt(user.getCreatedAt())
                 .lastSignInAt(user.getLastSignInAt())
                 .id(user.getUserId())
-                .addresses(user.getAddresses())
+                .location(user.getLocation())
+                .phoneNumber(user.getPhoneNumber())
+                .gender(user.getGender())
+                .dob(user.getDob())
                 .build();
         return ResponseEntity.ok()
                 .body(
@@ -397,17 +404,42 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
-//    @Override
-//    public ResponseEntity<ApiResponse<List<User>>> findByRole(String role) {
-//        List<User> users = userRepository.findByRole(role);
-//        if (users.isEmpty()) {
-//            return ResponseEntity.noContent().build();
-//        }
-//        return ResponseEntity.ok()
-//                .body(
-//                        ApiResponse.<List<User>>builder()
-//                                .result(users)
-//                                .build()
-//                );
-//    }
+    @Override
+    public ResponseEntity<ApiResponse<UserResponse>> changeProfile(UserUpdateRequest request, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(
+                            ApiResponse.<UserResponse>builder()
+                                    .code(ErrorCode.USER_NOT_EXISTED.getCode())
+                                    .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                                    .build()
+                    );
+        }
+        LocalDateTime now = LocalDateTime.now();
+
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setFullName(request.getFullName());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setGender(request.getGender());
+        user.setDob(request.getDob());
+        user.setUpdatedAt(now);
+        user.setLocation(request.getLocation());
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok()
+                .body(
+                        ApiResponse.<UserResponse>builder()
+                                .result(UserResponse.builder()
+                                        .id(user.getUserId())
+                                        .email(user.getEmail())
+                                        .fullName(user.getFullName())
+                                        .phoneNumber(user.getPhoneNumber())
+                                        .location(user.getLocation())
+                                        .gender(user.getGender())
+                                        .dob(user.getDob())
+                                        .build())
+                                .build()
+                );
+    }
 }

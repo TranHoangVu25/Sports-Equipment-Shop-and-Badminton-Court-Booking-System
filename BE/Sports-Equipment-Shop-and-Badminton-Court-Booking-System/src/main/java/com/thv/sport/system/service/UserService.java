@@ -17,7 +17,7 @@ public interface UserService {
 
     ResponseEntity<ApiResponse<String>> registerAccount(UserCreationRequest request);
 
-    ResponseEntity<ApiResponse<User>> updateUser(UserUpdateRequest request, Long id);
+    ResponseEntity<ApiResponse<User>> updateUserWithAdminRole(UserUpdateRequest request, Long id);
 
     ResponseEntity<ApiResponse<?>> deleteUser(Long id);
 
@@ -32,4 +32,7 @@ public interface UserService {
     ResponseEntity<ApiResponse<UserResponse>> getUserProfile(Long userId);
 
     ResponseEntity<ApiResponse<List<User>>> findByRole(String role);
+
+    ResponseEntity<ApiResponse<UserResponse>> changeProfile(UserUpdateRequest request, Long userId);
+
 }

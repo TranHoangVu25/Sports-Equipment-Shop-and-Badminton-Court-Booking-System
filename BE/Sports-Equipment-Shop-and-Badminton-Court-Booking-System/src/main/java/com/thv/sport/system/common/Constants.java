@@ -160,5 +160,10 @@ public class Constants {
         public static final String COD = "COD";
         public static final String STRIPE = "STRIPE";
     }
+
+    public static class Role {
+        public static final String USER = "user";
+        public static final String ADMIN = "admin";
+    }
 }
 

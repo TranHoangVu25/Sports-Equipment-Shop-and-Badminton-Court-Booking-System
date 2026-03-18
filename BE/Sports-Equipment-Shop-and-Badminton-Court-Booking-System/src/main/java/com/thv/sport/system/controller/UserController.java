@@ -1,7 +1,7 @@
 package com.thv.sport.system.controller;
 
 import com.thv.sport.system.common.Constants;
-import com.thv.sport.system.config.UserContextHolder;
+import com.thv.sport.system.config.security.UserPrincipal;
 import com.thv.sport.system.dto.request.authentication.ChangePasswordRequest;
 import com.thv.sport.system.dto.request.user.UserCreationRequest;
 import com.thv.sport.system.dto.request.user.UserUpdateRequest;
@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,7 +55,7 @@ public class UserController {
             @RequestBody @Valid UserUpdateRequest request,
             @PathVariable Long userId
     ){
-        return userService.updateUser(request,userId);
+        return userService.updateUserWithAdminRole(request, userId);
     }
 
     @DeleteMapping("/{userId}")
@@ -87,16 +88,27 @@ public class UserController {
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> getProfile(
+            @AuthenticationPrincipal UserPrincipal user
     ){
-        Long userId = UserContextHolder.getUserId();
-        return userService.getUserById(userId);
+        Integer userId = user.getUserId();
+        return userService.getUserById(Long.valueOf(userId));
     }
 
-    @PostMapping("/change-password")
+    @PutMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(
-            @RequestBody @Valid ChangePasswordRequest request
+            @RequestBody @Valid ChangePasswordRequest request,
+            @AuthenticationPrincipal UserPrincipal user
     ){
-        Long userId = UserContextHolder .getUserId();
-        return authenticationService.changePassword(userId,request);
+        Integer userId = user.getUserId();
+        return authenticationService.changePassword(Long.valueOf(userId), request);
+    }
+
+    @PostMapping("/update-profile")
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
+            @RequestBody @Valid UserUpdateRequest request,
+            @AuthenticationPrincipal UserPrincipal user
+    ) {
+        Integer userId = user.getUserId();
+        return userService.changeProfile(request, Long.valueOf(userId));
     }
 }

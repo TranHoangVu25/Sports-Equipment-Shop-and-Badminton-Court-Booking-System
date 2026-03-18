@@ -19,5 +19,8 @@ public class UserUpdateRequest {
     private LocalDateTime updatedAt;
     private Integer signInCount;
     private LocalDateTime currentSignInAt;
-    private LocalDate dob;
+    private String dob;
+    private String phoneNumber;
+    private String gender;
+    private String location;
 }
