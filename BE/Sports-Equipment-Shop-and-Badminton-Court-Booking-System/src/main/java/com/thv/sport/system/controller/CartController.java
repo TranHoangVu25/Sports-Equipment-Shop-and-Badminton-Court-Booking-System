@@ -4,10 +4,9 @@ import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.config.security.UserPrincipal;
 import com.thv.sport.system.dto.request.cart.CartItemRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
-import com.thv.sport.system.dto.response.cart.CartResponse;
 import com.thv.sport.system.dto.response.cart.CartItemResponse;
+import com.thv.sport.system.dto.response.cart.CartResponse;
 import com.thv.sport.system.model.Cart;
-import com.thv.sport.system.respository.CartRepository;
 import com.thv.sport.system.service.CartService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -16,7 +15,14 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 

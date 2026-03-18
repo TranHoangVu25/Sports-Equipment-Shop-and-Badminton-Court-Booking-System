@@ -1,6 +1,8 @@
 package com.thv.sport.system.service.impl;
 
 import com.thv.sport.system.dto.request.ProductCreateRequest;
+import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.homepage.ProductHomeResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
 import com.thv.sport.system.dto.response.product.ProductImageResponse;
@@ -10,9 +12,11 @@ import com.thv.sport.system.respository.ProductRepository;
 import com.thv.sport.system.respository.ProductImageRepository;
 import com.thv.sport.system.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -292,6 +296,28 @@ public class ProductServiceImpl implements ProductService {
         }
 
         return response;
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<List<ProductHomeResponse>>> getTop10ProductsByMainCategory(String mainCategory) {
+        List<Object[]> results = productRepository.findTop10ProductsByMainCategory(mainCategory);
+
+        List<ProductHomeResponse> response = results.stream()
+                .map(row -> ProductHomeResponse.builder()
+                        .productId(((Number) row[0]).longValue())
+                        .name((String) row[1])
+                        .price((BigDecimal) row[2])
+                        .imgUrl((String) row[3])
+                        .build())
+                .toList();
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<ProductHomeResponse>>builder()
+                        .code(1000)
+                        .message("Lấy danh sách sản phẩm thành công")
+                        .result(response)
+                        .build()
+        );
     }
 }
 
