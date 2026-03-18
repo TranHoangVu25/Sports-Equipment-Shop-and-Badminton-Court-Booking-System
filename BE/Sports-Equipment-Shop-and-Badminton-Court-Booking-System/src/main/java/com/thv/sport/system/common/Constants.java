@@ -60,6 +60,8 @@ public class Constants {
 
         // File Management APIs
         public static final String API_FILE = API_BASE + "/files";
+
+        public static final String API_HOME = API_BASE + "/home-page";
     }
 
     /**

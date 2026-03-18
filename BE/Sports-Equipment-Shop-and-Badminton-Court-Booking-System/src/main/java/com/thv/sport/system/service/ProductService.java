@@ -1,8 +1,11 @@
 package com.thv.sport.system.service;
 
 import com.thv.sport.system.dto.request.ProductCreateRequest;
-import com.thv.sport.system.dto.response.product.ProductResponse;
+import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.homepage.ProductHomeResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
+import com.thv.sport.system.dto.response.product.ProductResponse;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -73,5 +76,7 @@ public interface ProductService {
      * @return Batch response with success/failure statistics
      */
     BatchProductResponse deleteProductImagesBatch(List<Long> imageIds);
+
+    ResponseEntity<ApiResponse<List<ProductHomeResponse>>> getTop10ProductsByMainCategory(String mainCategory);
 }
 
