@@ -22,8 +22,12 @@ if (!rawLimit || String(rawLimit).trim() === '') {
 	LIMIT = parseInt(rawLimit, 10) || products.length;
 }
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || '5', 10);
+const START_INDEX = Math.max(0, parseInt(process.env.START_INDEX || process.argv[3] || '0', 10) || 0);
+const BATCH_DELAY_MS = Math.max(0, parseInt(process.env.BATCH_DELAY_MS || '100', 10) || 0);
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function normalizeText(v) { return v ? String(v).replace(/\s+/g, ' ').trim() : ''; }
 
 async function fetchHtml(url) {
 	try {
@@ -77,6 +81,125 @@ function findLabelValue($, labelKeywords) {
 		}
 	});
 	return found;
+}
+
+function extractBrand($, jsonLd) {
+	const fromMeta = normalizeText($('[itemprop="brand"] meta[itemprop="name"]').first().attr('content'));
+	if (fromMeta) return fromMeta;
+
+	const fromBrandBlock = normalizeText(
+		$('[itemprop="brand"] [itemprop="name"]').first().text()
+		|| $('[itemprop="brand"] a').first().text()
+		|| $('[itemprop="brand"]').first().text()
+	);
+	if (fromBrandBlock) return fromBrandBlock.replace(/^thương hiệu\s*:\s*/i, '');
+
+	if (jsonLd && jsonLd.brand) {
+		if (typeof jsonLd.brand === 'string') return normalizeText(jsonLd.brand);
+		if (Array.isArray(jsonLd.brand)) {
+			for (const b of jsonLd.brand) {
+				const name = normalizeText(typeof b === 'string' ? b : b && b.name);
+				if (name) return name;
+			}
+		} else if (jsonLd.brand.name) {
+			return normalizeText(jsonLd.brand.name);
+		}
+	}
+
+	const fromLabel = normalizeText(findLabelValue($, ['Thương hiệu', 'Thuong hieu', 'Brand']));
+	if (fromLabel) return fromLabel.replace(/^thương hiệu\s*:\s*/i, '');
+	return '';
+}
+
+function extractSizes($, url) {
+	const lowerUrl = String(url || '').toLowerCase();
+	const sizeSet = new Set();
+	const pushSize = raw => {
+		const val = normalizeText(raw);
+		if (!val) return;
+		if (/^(chon|chọn|size)$/i.test(val)) return;
+		sizeSet.add(val);
+	};
+
+	if (lowerUrl.includes('vot-cau-long')) {
+		$('input[name="size"][value], input.bk-product-property1[name="size"][value]').each((_, el) => {
+			pushSize($(el).attr('value'));
+		});
+	}
+
+	if (lowerUrl.includes('ao-cau-long') || lowerUrl.includes('giay-cau-long')) {
+		$('.swatch-element[data-value]').each((_, el) => {
+			pushSize($(el).attr('data-value'));
+		});
+		$('.swatch-element[data-value_2]').each((_, el) => {
+			pushSize($(el).attr('data-value_2'));
+		});
+	}
+
+	if (!sizeSet.size) {
+		$('input[name="size"][value], .swatch-element[data-value], .swatch-element[data-value_2]').each((_, el) => {
+			pushSize($(el).attr('value') || $(el).attr('data-value') || $(el).attr('data-value_2'));
+		});
+	}
+
+	return Array.from(sizeSet).map(size => ({
+		size,
+		quantity: randomInt(10, 50)
+	}));
+}
+
+function extractBaloColors($, html, url) {
+	const lowerUrl = String(url || '').toLowerCase();
+	if (!lowerUrl.includes('balo-cau-long')) return [];
+
+	const seen = new Set();
+	const colors = [];
+	const addColor = (colorRaw, imageRaw) => {
+		const color = normalizeText(colorRaw);
+		const image = normalizeText(imageRaw);
+		if (!color && !image) return;
+		const key = `${color}|${image}`;
+		if (seen.has(key)) return;
+		seen.add(key);
+		colors.push({ color, image });
+	};
+
+	$('bt[class*="nhom_01_mau"], [class*="nhom_01_mau_"]').each((_, el) => {
+		const color = (
+			$(el).find('.rname').first().text()
+			|| $(el).find('label.rname').first().text()
+			|| $(el).find('img').first().attr('alt')
+		);
+		const image = (
+			$(el).find('img').first().attr('src')
+			|| $(el).find('img').first().attr('data-src')
+			|| $(el).find('img').first().attr('data-lazy-src')
+		);
+		addColor(color, image);
+	});
+
+	// Fallback: variants can appear in script-rendered HTML strings.
+	if (!colors.length) {
+		const raws = [html || ''];
+		$('script').each((_, el) => {
+			const txt = $(el).html();
+			if (txt) raws.push(txt);
+		});
+		for (const raw of raws) {
+			if (!raw || !raw.includes('img_bien_the')) continue;
+			const normalized = String(raw).replace(/\\"/g, '"').replace(/\\\//g, '/');
+			const imgTagRegex = /<img[^>]*class=["'][^"']*img_bien_the[^"']*["'][^>]*>/gi;
+			let m;
+			while ((m = imgTagRegex.exec(normalized)) !== null) {
+				const tag = m[0];
+				const src = (tag.match(/\bsrc=["']([^"']+)["']/i) || [])[1] || '';
+				const alt = (tag.match(/\balt=["']([^"']+)["']/i) || [])[1] || '';
+				addColor(alt, src);
+			}
+		}
+	}
+
+	return colors;
 }
 
 function extractImages($, jsonLd) {
@@ -243,6 +366,10 @@ async function parseProduct(url) {
 		|| (jsonLd && (jsonLd.datePublished || (jsonLd.offers && jsonLd.offers.datePublished)))
 		|| '';
 
+	const sizes = extractSizes($, url);
+	const colors = extractBaloColors($, html, url);
+	const brand = extractBrand($, jsonLd);
+
 	// assign random quantity between 50 and 400; 5% chance sold out
 	const rand = Math.random();
 	let finalQuantity = '';
@@ -265,6 +392,9 @@ async function parseProduct(url) {
 		quantity: finalQuantity,
 		status: finalStatus,
 		images: images,
+		size: sizes,
+		colors: colors,
+		brand: brand,
 		mainCategory: cats.mainCategory ? String(cats.mainCategory).trim() : '',
 		subCategory: cats.subCategory ? String(cats.subCategory).trim() : '',
 		datePublished: datePublished ? String(datePublished).trim() : ''
@@ -274,19 +404,29 @@ async function parseProduct(url) {
 }
 
 async function run() {
-	const total = Math.min(products.length, LIMIT || products.length);
-	console.log(`Start crawling ${total} products (limit=${LIMIT}, concurrency=${CONCURRENCY})`);
-	const results = [];
+	const endIndex = Math.min(products.length, START_INDEX + (LIMIT || products.length));
+	const total = Math.max(0, endIndex - START_INDEX);
+	console.log(`Start crawling ${total} products (start=${START_INDEX}, end=${endIndex}, limit=${LIMIT}, concurrency=${CONCURRENCY})`);
 
-	for (let i = 0; i < total; i += CONCURRENCY) {
-		const batch = products.slice(i, i + CONCURRENCY);
+	let results = [];
+	if (START_INDEX > 0 && fs.existsSync(OUTPUT_FILE)) {
+		try {
+			const existing = JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf8'));
+			if (Array.isArray(existing)) results = existing;
+		} catch (e) {
+			console.error(`Could not read existing ${OUTPUT_FILE}, continue without resume data.`);
+		}
+	}
+
+	for (let i = START_INDEX; i < endIndex; i += CONCURRENCY) {
+		const batch = products.slice(i, Math.min(i + CONCURRENCY, endIndex));
 		const jobs = batch.map(p => parseProduct(p.url));
 		const res = await Promise.all(jobs);
 		res.forEach(r => { if (r) results.push(r); });
 		// write incremental
 		fs.writeFileSync(OUTPUT_FILE, JSON.stringify(results, null, 2), 'utf8');
-		console.log(`Progress: ${Math.min(i + CONCURRENCY, total)}/${total}`);
-		await sleep(500);
+		console.log(`Progress: ${Math.min(i + CONCURRENCY, endIndex)}/${endIndex}`);
+		if (BATCH_DELAY_MS > 0) await sleep(BATCH_DELAY_MS);
 	}
 
 	console.log(`Done. Wrote ${results.length} items to ${OUTPUT_FILE}`);
