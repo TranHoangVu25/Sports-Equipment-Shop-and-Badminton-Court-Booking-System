@@ -54,14 +54,10 @@ public class Constants {
         public static final String API_ANALYTICS = API_BASE + "/analytics";
         public static final String API_DASHBOARD = API_BASE + "/dashboard";
 
-        // System APIs
-        public static final String API_SYSTEM = API_BASE + "/system";
-        public static final String API_HEALTH = API_BASE + "/health";
-
-        // File Management APIs
-        public static final String API_FILE = API_BASE + "/files";
-
         public static final String API_HOME = API_BASE + "/home-page";
+
+        public static final String API_SEARCH = API_BASE + "/search";
+
     }
 
     /**
