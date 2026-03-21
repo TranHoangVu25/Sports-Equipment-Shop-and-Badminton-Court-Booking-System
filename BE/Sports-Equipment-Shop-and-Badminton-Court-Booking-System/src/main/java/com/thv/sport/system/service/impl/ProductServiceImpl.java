@@ -1,15 +1,20 @@
 package com.thv.sport.system.service.impl;
 
-import com.thv.sport.system.dto.request.ProductCreateRequest;
+import com.thv.sport.system.common.Constants;
+import com.thv.sport.system.dto.request.product.ProductCreateRequest;
+import com.thv.sport.system.dto.request.product.ProductVariantRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.homepage.ProductHomeResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
 import com.thv.sport.system.dto.response.product.ProductImageResponse;
+import com.thv.sport.system.dto.response.product.ProductSizeResponse;
 import com.thv.sport.system.model.Product;
 import com.thv.sport.system.model.ProductImage;
+import com.thv.sport.system.model.ProductVariant;
 import com.thv.sport.system.respository.ProductRepository;
 import com.thv.sport.system.respository.ProductImageRepository;
+import com.thv.sport.system.respository.ProductVariantRepository;
 import com.thv.sport.system.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,23 +36,11 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     @Override
-    @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
-        Product product = buildProductEntity(request);
-        Product savedProduct = productRepository.save(product);
-
-        List<ProductImage> productImages = new ArrayList<>();
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (String imageUrl : request.getImages()) {
-                ProductImage productImage = createProductImage(savedProduct, imageUrl);
-                productImage = productImageRepository.save(productImage);
-                productImages.add(productImage);
-            }
-        }
-
-        return buildProductResponse(savedProduct, productImages);
+        return null;
     }
 
     @Override
@@ -84,64 +77,19 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse getProductById(Long productId) {
-        return productRepository.findById(productId)
-                .map(product -> {
-                    List<ProductImage> images = productImageRepository.findAll().stream()
-                            .filter(img -> img.getProduct().getProductId().equals(productId))
-                            .toList();
-                    return buildProductResponse(product, images);
-                })
-                .orElse(null);
+        return null;
     }
 
     @Override
     public List<ProductResponse> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        List<ProductResponse> responses = new ArrayList<>();
-
-        for (Product product : products) {
-            List<ProductImage> images = productImageRepository.findAll().stream()
-                    .filter(img -> img.getProduct().getProductId().equals(product.getProductId()))
-                    .toList();
-            responses.add(buildProductResponse(product, images));
-        }
-
-        return responses;
+        return List.of();
     }
 
     @Override
-    @Transactional
     public ProductResponse updateProduct(Long productId, ProductCreateRequest request) {
-        return productRepository.findById(productId)
-                .map(product -> {
-                    product.setName(request.getName());
-                    product.setPrice(request.getPrice());
-                    product.setPriceCurrency(request.getPriceCurrency());
-                    product.setDescription(request.getDescription());
-                    product.setQuantity(request.getQuantity());
-                    product.setStatus(request.getStatus());
-                    product.setMainCategory(request.getMainCategory());
-                    product.setSubCategory(request.getSubCategory());
-                    product.setUpdatedAt(LocalDateTime.now());
-
-                    Product updatedProduct = productRepository.save(product);
-
-                    if (request.getImages() != null && !request.getImages().isEmpty()) {
-                        productImageRepository.deleteAll(product.getProductImages());
-
-                        List<ProductImage> newImages = new ArrayList<>();
-                        for (String imageUrl : request.getImages()) {
-                            ProductImage productImage = createProductImage(updatedProduct, imageUrl);
-                            productImage = productImageRepository.save(productImage);
-                            newImages.add(productImage);
-                        }
-                        updatedProduct.setProductImages(newImages);
-                    }
-
-                    return buildProductResponse(updatedProduct, updatedProduct.getProductImages());
-                })
-                .orElse(null);
+        return null;
     }
+
 
     @Override
     @Transactional
@@ -269,34 +217,34 @@ public class ProductServiceImpl implements ProductService {
     /**
      * Build ProductResponse from Product entity
      */
-    private ProductResponse buildProductResponse(Product product, List<ProductImage> productImages) {
-        ProductResponse response = ProductResponse.builder()
-                .productId(product.getProductId())
-                .name(product.getName())
-                .price(product.getPrice())
-                .priceCurrency(product.getPriceCurrency())
-                .description(product.getDescription())
-                .quantity(product.getQuantity())
-                .status(product.getStatus())
-                .mainCategory(product.getMainCategory())
-                .subCategory(product.getSubCategory())
-                .datePublished(product.getDatePublished())
-                .updatedAt(product.getUpdatedAt())
-                .build();
-
-        if (productImages != null && !productImages.isEmpty()) {
-            List<ProductImageResponse> imageResponses = new ArrayList<>();
-            for (ProductImage productImage : productImages) {
-                imageResponses.add(new ProductImageResponse(
-                        productImage.getProduct() != null ? productImage.getProduct().getProductId() : null,
-                        productImage.getImageUrl()
-                ));
-            }
-            response.setProductImages(imageResponses);
-        }
-
-        return response;
-    }
+//    private ProductResponse buildProductResponse(Product product, List<ProductImage> productImages) {
+//        ProductResponse response = ProductResponse.builder()
+//                .productId(product.getProductId())
+//                .name(product.getName())
+//                .price(product.getPrice())
+//                .priceCurrency(product.getPriceCurrency())
+//                .description(product.getDescription())
+//                .quantity(product.getQuantity())
+//                .status(product.getStatus())
+//                .mainCategory(product.getMainCategory())
+//                .subCategory(product.getSubCategory())
+//                .datePublished(String.valueOf(product.getDatePublished()))
+////                .updatedAt(product.getUpdatedAt())
+//                .build();
+//
+//        if (productImages != null && !productImages.isEmpty()) {
+//            List<ProductImageResponse> imageResponses = new ArrayList<>();
+//            for (ProductImage productImage : productImages) {
+//                imageResponses.add(new ProductImageResponse(
+//                        productImage.getProduct() != null ? productImage.getProduct().getProductId() : null,
+//                        productImage.getImageUrl()
+//                ));
+//            }
+//            response.setProductImages(imageResponses);
+//        }
+//
+//        return response;
+//    }
 
     @Override
     public ResponseEntity<ApiResponse<List<ProductHomeResponse>>> getTop10ProductsByMainCategory(String mainCategory) {
@@ -318,6 +266,174 @@ public class ProductServiceImpl implements ProductService {
                         .result(response)
                         .build()
         );
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> addBatchProduct(List<ProductCreateRequest> requests) {
+
+        List<ProductResponse> responses = new ArrayList<>();
+
+        for (ProductCreateRequest request : requests) {
+
+            // 1. Tạo product
+            Product product = Product.builder()
+                    .productId(request.getId())
+                    .name(request.getName())
+                    .price(request.getPrice())
+                    .priceCurrency(request.getPriceCurrency())
+                    .description(request.getDescription())
+                    .quantity(request.getQuantity())
+                    .status(getStockStatus(request.getQuantity())) // nên tự set theo quantity
+                    .brand(request.getBrand())
+                    .mainCategory(request.getMainCategory())
+                    .subCategory(request.getSubCategory())
+                    .build();
+
+            // save product trước để có product_id
+            Product savedProduct = productRepository.save(product);
+
+            // 2. Lưu product_image
+            List<String> savedImages = new ArrayList<>();
+            if (request.getImages() != null && !request.getImages().isEmpty()) {
+                List<ProductImage> imgList = request.getImages().stream()
+                        .filter(url -> url != null && !url.isBlank())
+                        .distinct()
+                        .map(url -> ProductImage.builder()
+                                .imageUrl(url)
+                                .product(savedProduct)
+                                .build())
+                        .toList();
+
+                productImageRepository.saveAll(imgList);
+
+                savedImages = imgList.stream()
+                        .map(ProductImage::getImageUrl)
+                        .toList();
+            }
+
+            // 3. Lưu product_variant từ field "size"
+            String sizeType = detectSizeType(request.getMainCategory());
+
+            List<ProductSizeResponse> sizeResponses = new ArrayList<>();
+
+            if (request.getSize() != null && !request.getSize().isEmpty()) {
+                List<ProductVariant> variants = request.getSize().stream()
+                        .filter(sizeReq -> sizeReq.getSize() != null && !sizeReq.getSize().isBlank())
+                        .map(sizeReq -> ProductVariant.builder()
+                                .product(savedProduct)
+                                .sku(generateSku(savedProduct.getProductId(), sizeType, sizeReq.getSize()))
+                                .sizeValue(sizeReq.getSize())
+                                .sizeType(sizeType)
+                                .quantity(sizeReq.getQuantity())
+                                .status(getStockStatus(sizeReq.getQuantity()))
+                                .build())
+                        .toList();
+
+                productVariantRepository.saveAll(variants);
+
+                sizeResponses = variants.stream()
+                        .map(v -> ProductSizeResponse.builder()
+                                .size(v.getSizeValue())
+                                .quantity(v.getQuantity())
+                                .build())
+                        .toList();
+
+            } else {
+                ProductVariant defaultVariant = ProductVariant.builder()
+                        .product(savedProduct)
+                        .sku(generateSku(savedProduct.getProductId(), Constants.SizeType.NONE, "DEFAULT"))
+                        .sizeValue("DEFAULT")
+                        .sizeType(Constants.SizeType.NONE)
+                        .quantity(request.getQuantity())
+                        .status(getStockStatus(request.getQuantity()))
+                        .build();
+
+                productVariantRepository.save(defaultVariant);
+
+                sizeResponses = List.of(
+                        ProductSizeResponse.builder()
+                                .size("DEFAULT")
+                                .quantity(defaultVariant.getQuantity())
+                                .build()
+                );
+            }
+
+            // 4. Build response cho từng product
+            ProductResponse response = ProductResponse.builder()
+                    .productId(savedProduct.getProductId())
+                    .name(savedProduct.getName())
+                    .price(savedProduct.getPrice())
+                    .priceCurrency(savedProduct.getPriceCurrency())
+                    .description(savedProduct.getDescription())
+                    .quantity(savedProduct.getQuantity())
+                    .status(savedProduct.getStatus())
+                    .brand(savedProduct.getBrand())
+                    .mainCategory(savedProduct.getMainCategory())
+                    .subCategory(savedProduct.getSubCategory())
+                    .images(savedImages)
+                    .sizes(sizeResponses)
+                    .colors(request.getColors() != null ? request.getColors() : new ArrayList<>())
+                    .build();
+
+            responses.add(response);
+        }
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<ProductResponse>>builder()
+                        .code(200)
+                        .message("Create batch products successfully")
+                        .result(responses)
+                        .build()
+        );
+    }
+
+    private String generateSku(Long productId, String sizeType, String sizeValue) {
+        return productId + "-" + sizeType + "-" + sizeValue.replaceAll("\\s+", "").toUpperCase();
+    }
+    private String detectSizeType(String mainCategory) {
+        if (mainCategory == null || mainCategory.isBlank()) {
+            return Constants.SizeType.NONE;
+        }
+
+        String category = mainCategory.trim();
+
+        // ===== APPAREL =====
+        if (category.equalsIgnoreCase("Áo Cầu Lông")
+                || category.equalsIgnoreCase("Áo Pickleball")
+                || category.equalsIgnoreCase("Áo tennis")
+                || category.equalsIgnoreCase("Quần Cầu Lông")
+                || category.equalsIgnoreCase("Quần Pickleball")
+                || category.equalsIgnoreCase("Quần tennis")
+                || category.equalsIgnoreCase("Váy cầu lông")
+                || category.equalsIgnoreCase("Váy Pickleball")
+                || category.equalsIgnoreCase("Chân Váy Tennis")
+                || category.equalsIgnoreCase("Mũ")) {
+            return Constants.SizeType.APPAREL;
+        }
+
+        // ===== SHOE =====
+        if (category.equalsIgnoreCase("Giày Cầu Lông")
+                || category.equalsIgnoreCase("Giày Cầu Lông Lining AYTM 067-1")
+                || category.equalsIgnoreCase("Giày Pickleball")
+                || category.equalsIgnoreCase("Giày Running")
+                || category.equalsIgnoreCase("Giày Tennis")) {
+            return Constants.SizeType.SHOE;
+        }
+
+        // ===== RACKET =====
+        if (category.equalsIgnoreCase("Vợt Cầu Lông")
+                || category.equalsIgnoreCase("Vợt PickleBall")
+                || category.equalsIgnoreCase("Vợt Tennis")) {
+            return Constants.SizeType.RACKET;
+        }
+
+        // ===== NONE =====
+        return Constants.SizeType.NONE;
+    }
+
+    private String getStockStatus(Integer quantity) {
+        return (quantity != null && quantity > 0) ? "còn hàng" : "hết hàng";
     }
 }
 

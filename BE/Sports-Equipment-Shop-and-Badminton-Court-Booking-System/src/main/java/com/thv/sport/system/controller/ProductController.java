@@ -1,7 +1,7 @@
 package com.thv.sport.system.controller;
 
 import com.thv.sport.system.common.Constants;
-import com.thv.sport.system.dto.request.ProductCreateRequest;
+import com.thv.sport.system.dto.request.product.ProductCreateRequest;
 import com.thv.sport.system.dto.response.BaseResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
@@ -219,5 +219,13 @@ public class ProductController extends BaseController {
             return internalErrorResponse("Error deleting products batch: " + e.getMessage());
         }
     }
+
+    @PostMapping("/create-product-batch")
+    public ResponseEntity<com.thv.sport.system.dto.response.ApiResponse<List<ProductResponse>>> addBatchProduct(
+            @RequestBody List<ProductCreateRequest> requests
+    ) {
+        return productService.addBatchProduct(requests);
+    }
+
 }
 

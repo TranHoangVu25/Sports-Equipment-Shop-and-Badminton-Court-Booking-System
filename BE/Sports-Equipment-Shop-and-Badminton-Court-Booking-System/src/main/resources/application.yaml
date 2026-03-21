@@ -33,6 +33,8 @@ spring:
           starttls:
             enable: true
           starttls.required: true
+  elasticsearch:
+    uris: http://localhost:9200
 server:
     port: 8086
 

@@ -13,6 +13,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Product {
 
     @Id
@@ -20,7 +21,7 @@ public class Product {
     @Column(name = "product_id")
     private Long productId;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false, columnDefinition = "TEXT")
     private String name;
 
     @Column(name = "price", precision = 19, scale = 2, nullable = false)
@@ -29,7 +30,7 @@ public class Product {
     @Column(name = "price_currency", nullable = false)
     private String priceCurrency;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "quantity", nullable = false)
@@ -37,6 +38,9 @@ public class Product {
 
     @Column(name = "status", length = 50, nullable = false)
     private String status;
+
+    @Column(name = "brand")
+    private String brand;
 
     @Column(name = "main_category", nullable = false)
     private String mainCategory;

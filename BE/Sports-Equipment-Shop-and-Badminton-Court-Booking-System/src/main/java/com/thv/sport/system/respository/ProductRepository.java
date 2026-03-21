@@ -20,7 +20,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     LEFT JOIN product_image pi ON p.product_id = pi.product_id
     WHERE p.main_category = :mainCategory
     GROUP BY p.product_id, p.name, p.price
-    ORDER BY p.product_id DESC
+    ORDER BY p.product_id ASC
     LIMIT 10
     """, nativeQuery = true)
     List<Object[]> findTop10ProductsByMainCategory(@Param("mainCategory") String mainCategory);

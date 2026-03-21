@@ -1,6 +1,5 @@
 package com.thv.sport.system.dto.response.product;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -16,43 +14,38 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "DTO for product response")
 public class ProductResponse {
 
-    @Schema(description = "Product ID")
     private Long productId;
 
-    @Schema(description = "Product name")
+    // id gốc từ nguồn crawl nếu có
+    private Long sourceProductId;
+
     private String name;
 
-    @Schema(description = "Product price")
     private BigDecimal price;
 
-    @Schema(description = "Price currency")
     private String priceCurrency;
 
-    @Schema(description = "Product description")
     private String description;
 
-    @Schema(description = "Product quantity")
+    // tổng stock product
     private Integer quantity;
 
-    @Schema(description = "Product status")
     private String status;
 
-    @Schema(description = "Main category")
     private String mainCategory;
 
-    @Schema(description = "Sub category")
     private String subCategory;
 
-    @Schema(description = "Date published")
-    private LocalDateTime datePublished;
+    private String brand;
 
-    @Schema(description = "Last updated date")
-    private LocalDateTime updatedAt;
+    private List<String> images;
 
-    @Schema(description = "Product images list")
-    private List<ProductImageResponse> productImages;
+    // giữ key "size" cho giống JSON bạn đang import / trả ra
+    private List<ProductSizeResponse> sizes;
+
+    private List<ProductColorResponse> colors;
+
+    private String datePublished;
 }
-
