@@ -167,5 +167,13 @@ public class Constants {
         public static final String USER = "user";
         public static final String ADMIN = "admin";
     }
+
+    public static class SizeType {
+        // APPAREL, SHOE, RACKET, NONE
+        public static final String APPAREL = "APPAREL"; // áo, quần, váy
+        public static final String SHOE = "SHOE";       // giày
+        public static final String RACKET = "RACKET";   // vợt
+        public static final String NONE = "NONE";       // balo, túi, phụ kiện, máy...
+    }
 }
 
