@@ -4,6 +4,7 @@ import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.dto.request.product.ProductCreateRequest;
 import com.thv.sport.system.dto.response.BaseResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
+import com.thv.sport.system.dto.response.product.ProductDetailResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
 import com.thv.sport.system.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -227,5 +228,11 @@ public class ProductController extends BaseController {
         return productService.addBatchProduct(requests);
     }
 
+    @GetMapping("/detail/{productId}")
+    public ResponseEntity<com.thv.sport.system.dto.response.ApiResponse<ProductDetailResponse>> getProductDetail(
+            @PathVariable Long productId
+    ) {
+        return productService.getProductDetail(productId);
+    }
 }
 

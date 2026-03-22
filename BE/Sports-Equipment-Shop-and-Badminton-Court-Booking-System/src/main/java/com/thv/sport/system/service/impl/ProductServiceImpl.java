@@ -5,10 +5,12 @@ import com.thv.sport.system.dto.request.product.ProductCreateRequest;
 import com.thv.sport.system.dto.request.product.ProductVariantRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.homepage.ProductHomeResponse;
+import com.thv.sport.system.dto.response.product.ProductDetailResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
 import com.thv.sport.system.dto.response.product.ProductImageResponse;
 import com.thv.sport.system.dto.response.product.ProductSizeResponse;
+import com.thv.sport.system.dto.response.product.VariantDTO;
 import com.thv.sport.system.model.Product;
 import com.thv.sport.system.model.ProductImage;
 import com.thv.sport.system.model.ProductVariant;
@@ -388,6 +390,20 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
+    @Override
+    public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(Long id) {
+        Product p = productRepository.findProductDetail(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        ProductDetailResponse productDetailResponse = mapToDTO(p);
+        return ResponseEntity.ok(
+                ApiResponse.<ProductDetailResponse>builder()
+                        .code(200)
+                        .message("Create batch products successfully")
+                        .result(productDetailResponse)
+                        .build());
+    }
+
     private String generateSku(Long productId, String sizeType, String sizeValue) {
         return productId + "-" + sizeType + "-" + sizeValue.replaceAll("\\s+", "").toUpperCase();
     }
@@ -434,6 +450,37 @@ public class ProductServiceImpl implements ProductService {
 
     private String getStockStatus(Integer quantity) {
         return (quantity != null && quantity > 0) ? "còn hàng" : "hết hàng";
+    }
+
+    public ProductDetailResponse mapToDTO(Product p) {
+
+        return ProductDetailResponse.builder()
+                .productId(p.getProductId())
+                .name(p.getName())
+                .quantity(Long.valueOf(p.getQuantity()))
+                .price(p.getPrice())
+                .description(p.getDescription())
+                .status(p.getStatus())
+                .brand(p.getBrand())
+
+                .images(
+                        p.getProductImages().stream()
+                                .map(ProductImage::getImageUrl)
+                                .toList()
+                )
+
+                .variants(
+                        p.getProductVariants().stream()
+                                .map(v -> VariantDTO.builder()
+                                        .size(v.getSizeValue())
+                                        .type(v.getSizeType())
+                                        .quantity(v.getQuantity())
+                                        .sku(v.getSku())
+                                        .build()
+                                )
+                                .toList()
+                )
+                .build();
     }
 }
 

@@ -4,7 +4,9 @@ import com.thv.sport.system.dto.request.product.ProductCreateRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.homepage.ProductHomeResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
+import com.thv.sport.system.dto.response.product.ProductDetailResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
+import com.thv.sport.system.model.Product;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -81,6 +83,8 @@ public interface ProductService {
 
 
     ResponseEntity<ApiResponse<List<ProductResponse>>> addBatchProduct(List<ProductCreateRequest> requests);
+
+    ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(Long id);
 
 }
 

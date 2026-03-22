@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -24,5 +25,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     LIMIT 10
     """, nativeQuery = true)
     List<Object[]> findTop10ProductsByMainCategory(@Param("mainCategory") String mainCategory);
+
+    @Query("""
+    SELECT DISTINCT p
+    FROM Product p
+    LEFT JOIN  p.productImages pi
+    LEFT JOIN  p.productVariants pv
+    WHERE p.productId = :productId
+""")
+    Optional<Product> findProductDetail(@Param("productId") Long productId);
 }
 
