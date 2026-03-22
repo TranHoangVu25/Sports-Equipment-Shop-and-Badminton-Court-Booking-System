@@ -18,11 +18,12 @@ public interface ProductSearchService {
 
     SearchResultDTO searchProducts(
             String name,
-            List<String> categories,
-            List<String> characters,
+            List<String> mainCategory,
+            List<String> subCategory,
             Double minPrice,
             Double maxPrice,
             String status,
+            List<String> sizes,
             int page,
             int limit,
             String sortBy,

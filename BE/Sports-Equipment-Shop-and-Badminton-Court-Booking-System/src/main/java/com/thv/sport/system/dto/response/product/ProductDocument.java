@@ -60,4 +60,7 @@ public class ProductDocument {
 
     @Field(type = FieldType.Keyword)
     private List<String> imageUrls;
+
+    @Field(type = FieldType.Nested, includeInParent = true)
+    private List<VariantDocument> variants;
 }

@@ -50,6 +50,7 @@ public class SearchController {
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) List<String> sizes,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "productId") String sortBy, //tìm kiếm theo các field id,name.keyword,createdAt,status
@@ -63,6 +64,7 @@ public class SearchController {
                     minPrice,
                     maxPrice,
                     status,
+                    sizes,
                     page,
                     limit,
                     sortBy,

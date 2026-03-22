@@ -74,6 +74,7 @@ public class ProductSearchServiceImpl implements ProductSearchService {
             Double minPrice,
             Double maxPrice,
             String status,
+            List<String> sizes,
             int page,
             int limit,
             String sortBy,
@@ -82,29 +83,30 @@ public class ProductSearchServiceImpl implements ProductSearchService {
 
         int from = (page - 1) * limit;
 
-        // Tạo truy vấn fuzzy cho name
-        Query byNameQuery = null;
+        // ===== MUST =====
+        List<Query> mustQueries = new ArrayList<>();
+
         if (name != null && !name.isEmpty()) {
-            byNameQuery = MatchQuery.of(m -> m
+            mustQueries.add(MatchQuery.of(m -> m
                     .field("name")
                     .query(name)
                     .fuzziness("2")
-            )._toQuery();
+            )._toQuery());
         }
 
-        // Tạo danh sách filter
+        // ===== FILTER =====
         List<Query> filters = new ArrayList<>();
 
         if (mainCategory != null && !mainCategory.isEmpty()) {
             filters.add(TermsQuery.of(t -> t
-                    .field("mainCategory.keyword")
+                    .field("mainCategory")
                     .terms(v -> v.value(mainCategory.stream().map(FieldValue::of).toList()))
             )._toQuery());
         }
 
         if (subCategory != null && !subCategory.isEmpty()) {
             filters.add(TermsQuery.of(t -> t
-                    .field("subCategory.keyword")
+                    .field("subCategory")
                     .terms(v -> v.value(subCategory.stream().map(FieldValue::of).toList()))
             )._toQuery());
         }
@@ -113,71 +115,85 @@ public class ProductSearchServiceImpl implements ProductSearchService {
             RangeQuery.Builder range = new RangeQuery.Builder().field("price");
             if (minPrice != null) range.gte(JsonData.of(minPrice));
             if (maxPrice != null) range.lte(JsonData.of(maxPrice));
+
             filters.add(range.build()._toQuery());
         }
 
         if (status != null && !status.isEmpty()) {
-            // Sửa lại: Dùng TermQuery trên trường "status" (vì nó là keyword gốc)
             filters.add(TermQuery.of(t -> t
-                    .field("status.keyword")
+                    .field("status")
                     .value(status)
                     .caseInsensitive(true)
             )._toQuery());
         }
 
-        // Kết hợp tất cả điều kiện
-        BoolQuery.Builder boolBuilder = new BoolQuery.Builder();
-        if (byNameQuery != null) boolBuilder.must(byNameQuery);
-        if (!filters.isEmpty()) boolBuilder.filter(filters);
+        // ===== ✅ SIZE FILTER (FIX CHUẨN) =====
+        if (sizes != null && !sizes.isEmpty()) {
 
-        // Sắp xếp
-//        List<SortOptions> sortOptions = new ArrayList<>();
-//        if (sortBy != null && !sortBy.isEmpty()) {
-//            sortOptions.add(SortOptions.of(s -> s
-//                    .field(f -> f
-//                            .field(sortBy)
-//                            .order("desc".equalsIgnoreCase(sortOrder) ? SortOrder.Desc : SortOrder.Asc)
-//                    )
-//            ));
-//        } else {
-//            sortOptions.add(SortOptions.of(s -> s
-//                    .field(f -> f.field("id").order(SortOrder.Desc))
-//            ));
-//        }
+            List<Query> sizeShould = new ArrayList<>();
 
-// Nếu có tìm theo name => ưu tiên sắp theo score
+            for (String size : sizes) {
+                sizeShould.add(Query.of(q -> q
+                        .prefix(p -> p
+                                .field("variants.size")
+                                .value(size) // "3U" → match "3U5", "3U6"
+                        )
+                ));
+            }
+
+            Query nestedSizeQuery = Query.of(q -> q
+                    .nested(n -> n
+                            .path("variants")
+                            .query(nq -> nq
+                                    .bool(b -> b
+                                            .should(sizeShould)
+                                            .minimumShouldMatch("1")
+                                    )
+                            )
+                    )
+            );
+
+            // 👉 QUAN TRỌNG: đưa vào FILTER
+            filters.add(nestedSizeQuery);
+        }
+
+        // ===== BUILD BOOL =====
+        BoolQuery.Builder bool = new BoolQuery.Builder();
+
+        if (!mustQueries.isEmpty()) bool.must(mustQueries);
+        if (!filters.isEmpty()) bool.filter(filters);
+
+        Query finalQuery = bool.build()._toQuery();
+
+        // ===== SORT =====
         List<SortOptions> sortOptions = new ArrayList<>();
-        if (name != null && !name.isEmpty()) {
-            sortOptions.add(SortOptions.of(s -> s
-                    .score(sc -> sc.order(SortOrder.Desc))
-            ));
-        } else if (sortBy != null && !sortBy.isEmpty()) {
+
+        if (sortBy != null && !sortBy.isEmpty()) {
             sortOptions.add(SortOptions.of(s -> s
                     .field(f -> f
                             .field(sortBy)
-                            .order("desc".equalsIgnoreCase(sortOrder) ? SortOrder.Desc : SortOrder.Asc)
+                            .order("desc".equalsIgnoreCase(sortOrder)
+                                    ? SortOrder.Desc
+                                    : SortOrder.Asc)
                     )
             ));
         } else {
             sortOptions.add(SortOptions.of(s -> s
-                    .field(f -> f.field("productId").order(SortOrder.Desc))
+                    .score(sc -> sc.order(SortOrder.Desc))
             ));
         }
 
-        // Gửi truy vấn Elasticsearch
+        // ===== SEARCH =====
         SearchResponse<ProductDocument> response = elasticClient.search(s -> s
                         .index("product_service")
-                        .query(boolBuilder.build()._toQuery())
+                        .query(finalQuery)
                         .from(from)
                         .size(limit)
-                        .sort(sortOptions)
-                        .aggregations("categories_count", a -> a.terms(t -> t.field("mainCategory.keyword")))
-                        .aggregations("characters_count", a -> a.terms(t -> t.field("subCategory.keyword")))
-                        .aggregations("status_count", a -> a.terms(t -> t.field("status.keyword"))), // <--- SỬA LẠI 2: Bỏ
+                        .sort(sortOptions),
                 ProductDocument.class
         );
 
-        // Lấy kết quả
+        // ===== RESULT =====
         List<ProductDocument> results = response.hits().hits().stream()
                 .map(Hit::source)
                 .filter(Objects::nonNull)
@@ -187,28 +203,15 @@ public class ProductSearchServiceImpl implements ProductSearchService {
                 ? response.hits().total().value()
                 : results.size();
 
-        // Xử lý Aggregation (nếu có)
-        List<CountItemDTO> categoriesCount = new ArrayList<>();
-        List<CountItemDTO> charactersCount = new ArrayList<>();
-        List<CountItemDTO> statusCount = new ArrayList<>();
-
-        if (response.aggregations().get("categories_count") != null) {
-            categoriesCount = response.aggregations().get("categories_count").sterms().buckets().array().stream()
-                    .map(b -> new CountItemDTO(b.key().stringValue(), b.docCount()))
-                    .toList();
-        }
-
-        if (response.aggregations().get("characters_count") != null) {
-            charactersCount = response.aggregations().get("characters_count").sterms().buckets().array().stream()
-                    .map(b -> new CountItemDTO(b.key().stringValue(), b.docCount()))
-                    .toList();
-        }
-
-        if (response.aggregations().get("status_count") != null) {
-            statusCount = response.aggregations().get("status_count").sterms().buckets().array().stream()
-                    .map(b -> new CountItemDTO(b.key().stringValue(), b.docCount()))
-                    .toList();
-        }
-        return new SearchResultDTO(total, page, limit, status, results, charactersCount, categoriesCount, statusCount);
+        return new SearchResultDTO(
+                total,
+                page,
+                limit,
+                status,
+                results,
+                List.of(),
+                List.of(),
+                List.of()
+        );
     }
 }
