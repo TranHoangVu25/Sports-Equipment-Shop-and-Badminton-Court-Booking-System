@@ -38,6 +38,12 @@ public class OrderItem {
     @Column(name = "sub_total", precision = 10, scale = 2, nullable = false)
     private BigDecimal subTotal;
 
+    @Column(name = "sku", nullable = false)
+    private String sku;
+
+    @Column(name = "size", nullable = false)
+    private String size;
+
     @JsonProperty("productId")
     public Long getProductId() {
         return product != null ? product.getProductId() : null;

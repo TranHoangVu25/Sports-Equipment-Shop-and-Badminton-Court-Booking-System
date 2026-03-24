@@ -1,7 +1,10 @@
 package com.thv.sport.system.service.impl;
 
 import com.thv.sport.system.common.Constants;
+import com.thv.sport.system.common.DateUtil;
+import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.order.OrderResponse;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
 import com.thv.sport.system.model.Order;
@@ -40,7 +43,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public ResponseEntity<ApiResponse<Order>> checkout(Long userId) {
+    public ResponseEntity<ApiResponse<Order>> checkout(Long userId, OrderRequest request) {
 
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -57,6 +60,10 @@ public class OrderServiceImpl implements OrderService {
         Order order = new Order();
         order.setUser(u);
         order.setStatus(Constants.OrderStatus.PENDING);
+        order.setRecipient(request.getRecipient());
+        order.setLocationDetail(request.getLocationDetail());
+        order.setPhoneNumber(request.getPhoneNumber());
+        order.setEmail(request.getEmail());
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
 
@@ -71,6 +78,8 @@ public class OrderServiceImpl implements OrderService {
             orderItem.setProduct(cartItem.getProduct());
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(cartItem.getPrice());
+            orderItem.setSku(cartItem.getSku());
+            orderItem.setSize(cartItem.getSize());
 
             BigDecimal subTotal = cartItem.getPrice()
                     .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
@@ -113,14 +122,28 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
-    public ResponseEntity<ApiResponse<List<Order>>> getAllOrders() {
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
+        List<OrderResponse> orderResponseList = new ArrayList<>();
 
         List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
 
+        for (Order order : orders) {
+            String orderId = DateUtil.formatToDDMMYYYYHHMMSS(order.getCreatedAt()) +"_"+ order.getOrderId();
+            OrderResponse response = OrderResponse.builder()
+                    .orderId(orderId)
+                    .createdAt(order.getCreatedAt())
+                    .locationDetail(order.getLocationDetail())
+                    .totalAmount(order.getTotalAmount())
+                    .status(order.getStatus())
+                    .build();
+            orderResponseList.add(response);
+        }
+
+
         return ResponseEntity.ok(
-                ApiResponse.<List<Order>>builder()
+                ApiResponse.<List<OrderResponse>>builder()
                         .message("Get orders successfully")
-                        .result(orders)
+                        .result(orderResponseList)
                         .build()
         );
     }
