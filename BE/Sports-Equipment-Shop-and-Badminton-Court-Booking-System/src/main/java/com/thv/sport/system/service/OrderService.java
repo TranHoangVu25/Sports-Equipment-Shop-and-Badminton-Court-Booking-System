@@ -1,15 +1,17 @@
 package com.thv.sport.system.service;
 
+import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.order.OrderResponse;
 import com.thv.sport.system.model.Order;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
 public interface OrderService {
-    ResponseEntity<ApiResponse<Order>> checkout(Long userId);
+    ResponseEntity<ApiResponse<Order>> checkout(Long userId, OrderRequest request);
 
-    ResponseEntity<ApiResponse<List<Order>>> getAllOrders();
+    ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders();
 
     ResponseEntity<ApiResponse<List<Order>>> getOrdersByUser(Long userId);
 }

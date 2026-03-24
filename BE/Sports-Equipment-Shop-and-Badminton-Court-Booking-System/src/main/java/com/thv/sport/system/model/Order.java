@@ -34,6 +34,21 @@ public class Order {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "recipient", nullable = false)
+    private String recipient;
+
+    @Column(name = "location_detail", nullable = false)
+    private String locationDetail;
+
+    @Column(name = "phone_number", nullable = false)
+    private String phoneNumber;
+
+    @Column(name = "note")
+    private String note;
+
+    @Column(name = "email")
+    private String email;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
