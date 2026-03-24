@@ -86,7 +86,7 @@ public class CartController {
     @PutMapping("/cart-items")
     public ResponseEntity<ApiResponse<CartItemResponse>> updateCartItem(
             @AuthenticationPrincipal UserPrincipal user,
-            @RequestBody @Valid CartItemRequest request
+            @RequestBody CartItemRequest request
     ) {
         Integer userId = user.getUserId();
         return cartService.updateQuantity(userId, request);

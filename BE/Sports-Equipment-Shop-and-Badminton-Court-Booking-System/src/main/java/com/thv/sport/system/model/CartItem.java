@@ -44,8 +44,11 @@ public class CartItem {
     @Column(name = "image")
     private String image;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name = "sku")
+    private String sku;
+
+    @Column(name = "size")
+    private String size;
 
     @JsonProperty("productId")
     public Long getProductId() {
