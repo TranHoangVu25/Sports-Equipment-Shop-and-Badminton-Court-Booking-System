@@ -16,4 +16,6 @@ public class CartItemRequest {
     @Min(value = 1,message = "INVALID_QUANTITY")
     int quantity;
     boolean plus; // true: +1 , false: -1
+    String sku;
+    String size;
 }

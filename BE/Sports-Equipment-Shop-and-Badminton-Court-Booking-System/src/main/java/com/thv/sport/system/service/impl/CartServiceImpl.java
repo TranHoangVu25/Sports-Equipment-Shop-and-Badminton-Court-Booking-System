@@ -8,6 +8,7 @@ import com.thv.sport.system.exception.ErrorCode;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
 import com.thv.sport.system.model.Product;
+import com.thv.sport.system.model.ProductVariant;
 import com.thv.sport.system.model.User;
 import com.thv.sport.system.respository.CartItemRepository;
 import com.thv.sport.system.respository.CartRepository;
@@ -19,11 +20,15 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -197,7 +202,8 @@ public class CartServiceImpl implements CartService {
                 .price(item.getPrice())
                 .quantity(item.getQuantity())
                 .image(item.getImage())
-                .description(item.getDescription())
+                .sku(item.getSku())
+                .size(item.getSize())
                 .build();
     }
     public ResponseEntity<ApiResponse<CartResponse>> findByCartUserId(Integer userId) {
@@ -226,7 +232,8 @@ public class CartServiceImpl implements CartService {
                         .price(item.getPrice())
                         .quantity(item.getQuantity())
                         .image(item.getImage())
-                        .description(item.getDescription())
+                        .sku(item.getSku())
+                        .size(item.getSize())
                         .build())
                 .toList();
 
@@ -273,6 +280,15 @@ public class CartServiceImpl implements CartService {
                 .filter(p -> "còn hàng".equalsIgnoreCase(p.getStatus()))
                 .orElseThrow(() -> new RuntimeException("Product not available"));
 
+        Map<String, ProductVariant> variantMap = product.getProductVariants()
+                .stream()
+                .collect(Collectors.toMap(ProductVariant::getSku, Function.identity()));
+        ProductVariant productVariant = variantMap.get(request.getSku());
+
+        if(ObjectUtils.isEmpty(productVariant)) {
+            throw new RuntimeException("Product not available");
+        }
+
         // 2. Lấy cart của user hoặc tạo mới
         Cart cart = cartRepository.findByUserId(Long.valueOf(userId))
                 .orElseGet(() -> {
@@ -308,13 +324,14 @@ public class CartServiceImpl implements CartService {
                     .name(product.getName())
                     .price(product.getPrice())
                     .quantity(request.getQuantity())
+                    .sku(request.getSku())
+                    .size(request.getSize())
                     .image(
                             product.getProductImages() != null &&
                                     !product.getProductImages().isEmpty()
                                     ? product.getProductImages().getFirst().getImageUrl()
                                     : null
                     )
-                    .description(product.getDescription())
                     .build();
 
             cart.getCartItems().add(newItem);
