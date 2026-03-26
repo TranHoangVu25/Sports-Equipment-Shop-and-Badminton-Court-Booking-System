@@ -5,17 +5,21 @@ import com.thv.sport.system.common.DateUtil;
 import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.order.CheckoutResponse;
+import com.thv.sport.system.dto.response.order.OrderItemResponse;
 import com.thv.sport.system.dto.response.order.OrderResponse;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
 import com.thv.sport.system.model.Order;
 import com.thv.sport.system.model.OrderItem;
 import com.thv.sport.system.model.Payment;
+import com.thv.sport.system.model.Product;
 import com.thv.sport.system.model.User;
 import com.thv.sport.system.respository.CartItemRepository;
 import com.thv.sport.system.respository.CartRepository;
 import com.thv.sport.system.respository.OrderRepository;
 import com.thv.sport.system.respository.PaymentRepository;
+import com.thv.sport.system.respository.ProductRepository;
+import com.thv.sport.system.respository.ProductVariantRepository;
 import com.thv.sport.system.respository.UserRepository;
 import com.thv.sport.system.service.OrderService;
 import lombok.AccessLevel;
@@ -29,7 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -41,6 +48,7 @@ public class OrderServiceImpl implements OrderService {
     UserRepository userRepository;
     PaymentRepository paymentRepository;
     CartItemRepository cartItemRepository;
+    ProductRepository  productRepository;
 
     @Override
     @Transactional
@@ -170,6 +178,53 @@ public class OrderServiceImpl implements OrderService {
                 ApiResponse.<List<Order>>builder()
                         .message("Get user orders successfully")
                         .result(orders)
+                        .build()
+        );
+    }
+
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId, Long userId) {
+        List<OrderItemResponse>  orderItemResponseList = new ArrayList<>();
+
+        Order order = orderRepository
+                .findOrderByOrderIdAndUserId(orderId, userId).orElseThrow(() -> new RuntimeException("Order not found"));
+
+        List<Long> proIds = order.getOrderItems().stream()
+                .map(OrderItem::getProductId)
+                .toList();
+
+        List<Product> productList = productRepository.findListProductByProductId(proIds);
+
+        Map<Long, Product> productMap = productList.stream()
+                .collect(Collectors.toMap(
+                        Product::getProductId,
+                        product ->product
+                ));
+
+
+        for (OrderItem orderItem : order.getOrderItems()) {
+            OrderItemResponse orderItemResponse = OrderItemResponse.builder()
+                    .productName(productMap.get(orderItem.getProductId()).getName())
+                    .quantity(orderItem.getQuantity())
+                    .price(orderItem.getPrice())
+                    .sku(orderItem.getSku())
+                    .size(orderItem.getSize())
+                    .imgUrl(productMap.get(orderItem.getProductId()).getProductImages().getFirst().getImageUrl())
+                    .build();
+            orderItemResponseList.add(orderItemResponse);
+        }
+
+        return ResponseEntity.ok(
+                ApiResponse.<OrderResponse>builder()
+                        .message("Get user orders successfully")
+                        .result(OrderResponse.builder()
+                                .orderId(String.valueOf(order.getOrderId()))
+                                .phoneNumber(order.getPhoneNumber())
+                                .locationDetail(order.getLocationDetail())
+                                .recipient(order.getRecipient())
+                                .totalAmount(order.getTotalAmount())
+                                .status(order.getStatus())
+                                .orderItems(orderItemResponseList)
+                                .build())
                         .build()
         );
     }

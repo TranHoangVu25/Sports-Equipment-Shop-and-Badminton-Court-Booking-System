@@ -15,4 +15,7 @@ public interface OrderService {
     ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders();
 
     ResponseEntity<ApiResponse<List<Order>>> getOrdersByUser(Long userId);
-}
+
+    ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId, Long userId);
+
+    }

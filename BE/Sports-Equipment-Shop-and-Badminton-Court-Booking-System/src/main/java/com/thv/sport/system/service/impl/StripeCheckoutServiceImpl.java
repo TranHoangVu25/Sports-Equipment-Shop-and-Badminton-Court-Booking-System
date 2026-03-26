@@ -56,12 +56,11 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-
         SessionCreateParams.Builder params =
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.PAYMENT)
                         .setLocale(SessionCreateParams.Locale.EN)
-                        .setSuccessUrl("http://localhost:5173/payment/success")
+                        .setSuccessUrl("http://localhost:5173/profile")
                         .setCancelUrl("http://localhost:5173/payment/failed")
                         .putMetadata("orderId", String.valueOf(order.getOrderId()))
                         .putMetadata("paymentId", String.valueOf(payment.getPaymentId()))
@@ -79,7 +78,7 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
 
             long unitAmount = priceVnd.longValue();
 
-            String size = "";
+            String size = " ";
             if (!item.getSize().equals(SIZE_DEFAULT)) {
                 size = "Size: " + item.getSize();
             }
@@ -94,9 +93,7 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
                                             .setProductData(
                                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                             .setName(item.getProduct().getName())
-                                                            .setDescription(
-                                                                    size
-                                                            )
+                                                            .setDescription(size)
                                                             .addImage(item.getProduct().getProductImages()
                                                                     .getFirst().getImageUrl())
                                                             .build()
