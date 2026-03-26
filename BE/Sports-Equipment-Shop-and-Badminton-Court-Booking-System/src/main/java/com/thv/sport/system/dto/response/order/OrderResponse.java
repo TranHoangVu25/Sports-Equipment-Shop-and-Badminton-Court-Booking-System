@@ -1,5 +1,6 @@
 package com.thv.sport.system.dto.response.order;
 
+import com.thv.sport.system.model.OrderItem;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,4 +22,6 @@ public class OrderResponse {
     private String locationDetail;
     private BigDecimal totalAmount;
     private String status;
+    // stripe thanh toán chỉ sử dụng danh sách item
+    private List<OrderItemResponse> orderItems;
 }

@@ -1,7 +1,12 @@
-package com.thv.sport.system.service.impl;
+package com.thv.sport.system.service;
 
-import com.thv.sport.system.dto.response.order.OrderResponse;
+import com.thv.sport.system.dto.request.order.OrderRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 
 public interface StripeCheckoutService {
-    String createCheckoutSession(OrderResponse order);
+    String createCheckoutSession(OrderRequest request, Long userId);
+
+    ResponseEntity<String> handleStripeWebhook(HttpServletRequest request);
+
 }

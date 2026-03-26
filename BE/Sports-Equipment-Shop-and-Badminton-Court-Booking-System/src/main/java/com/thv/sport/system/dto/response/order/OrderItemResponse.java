@@ -1,6 +1,5 @@
 package com.thv.sport.system.dto.response.order;
 
-import com.thv.sport.system.model.Product;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,10 +14,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class OrderItemResponse {
-    private Long orderItemId;
-    private Long orderId;
-    private Product productId;
+    private String productName;
     private Integer quantity;
     private BigDecimal price;
-    private BigDecimal subTotal;
+    private String sku;
+    private String size;
+    private String imgUrl;
 }

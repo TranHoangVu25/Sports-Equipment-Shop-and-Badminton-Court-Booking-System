@@ -57,6 +57,8 @@ public class Constants {
         public static final String API_HOME = API_BASE + "/home-page";
 
         public static final String API_SEARCH = API_BASE + "/search";
+        public static final String API_WEBHOOK = API_BASE + "/webhook";
+
 
     }
 
@@ -94,6 +96,8 @@ public class Constants {
         public static final String DELIVERED = "delivered";
         public static final String CANCELLED = "cancelled";
         public static final String REFUNDED = "refunded";
+        public static final String SUCCESS = "success";
+
     }
 
     /**
@@ -170,6 +174,11 @@ public class Constants {
         public static final String SHOE = "SHOE";       // giày
         public static final String RACKET = "RACKET";   // vợt
         public static final String NONE = "NONE";       // balo, túi, phụ kiện, máy...
+    }
+
+    public static class ExchangeRate {
+        // 1JPY = 170 VND
+        public static final long VND_PER_JPY = 170;
     }
 }
 
