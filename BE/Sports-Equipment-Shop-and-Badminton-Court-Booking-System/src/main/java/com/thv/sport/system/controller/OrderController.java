@@ -4,12 +4,14 @@ import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.config.security.UserPrincipal;
 import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.order.CheckoutResponse;
 import com.thv.sport.system.dto.response.order.OrderResponse;
 import com.thv.sport.system.model.Order;
 import com.thv.sport.system.service.OrderService;
+import com.thv.sport.system.service.StripeCheckoutService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,9 +28,10 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final StripeCheckoutService stripeCheckoutService;
 
     @PostMapping("/checkout/cod")
-    public ResponseEntity<ApiResponse<Order>> checkoutCOD(
+    public ResponseEntity<ApiResponse<CheckoutResponse>> checkoutCOD(
             @AuthenticationPrincipal UserPrincipal user,
             @Valid @RequestBody OrderRequest request
             ) {
@@ -48,4 +51,28 @@ public class OrderController {
         Long userId = Long.valueOf(user.getUserId());
         return orderService.getOrdersByUser(userId);
     }
+
+    @PostMapping("/checkout-stripe-url")
+    public ResponseEntity<ApiResponse<String>> createCheckout(
+            @RequestBody OrderRequest request,
+            @AuthenticationPrincipal UserPrincipal user
+    ) {
+        Integer userId = user.getUserId();
+        // Build Stripe Checkout
+        String checkoutUrl =
+                stripeCheckoutService.createCheckoutSession(request, Long.valueOf(userId));
+
+        return ResponseEntity.ok()
+                .body(
+                        ApiResponse.<String>builder()
+                                .message("Get check out URL")
+                                .result(checkoutUrl)
+                                .build());
+    }
+
+    @PostMapping("/stripe")
+    public ResponseEntity<String> handleStripeWebhook(HttpServletRequest request) {
+        return stripeCheckoutService.handleStripeWebhook(request);
+    }
+
 }

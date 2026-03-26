@@ -1,4 +1,4 @@
-package com.example.payment_service.configuration;
+package com.thv.sport.system.config;
 
 import com.stripe.Stripe;
 import jakarta.annotation.PostConstruct;

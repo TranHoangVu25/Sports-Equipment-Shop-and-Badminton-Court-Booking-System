@@ -21,10 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -141,39 +139,39 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<ApiResponse<User>> updateUserWithAdminRole(UserUpdateRequest request, Long userId) {
         try {
-        //Trường hợp userId không tồn tại
-        if (!userRepository.existsById(userId)){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            //Trường hợp userId không tồn tại
+            if (!userRepository.existsById(userId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(
+                                ApiResponse.<User>builder()
+                                        .code(ErrorCode.USER_NOT_EXISTED.getCode())
+                                        .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                                        .build()
+                        );
+            }
+
+            User user = userRepository.findById(userId).get();
+            //nếu k có thay đổi về mật khẩu thì dùng mật khẩu cũ
+            if (request.getEncryptedPassword() == null) {
+                user.setEncryptedPassword(user.getEncryptedPassword());
+            } else {
+                String password = passwordEncoder.encode(request.getEncryptedPassword());
+                user.setEncryptedPassword(password);
+            }
+
+            user.setFullName(request.getFullName());
+            user.setUpdatedAt(LocalDateTime.now());
+
+            //lưu thông tin thay đổi vào db
+            User saved_user = userRepository.save(user);
+
+            return ResponseEntity.ok()
                     .body(
                             ApiResponse.<User>builder()
-                                    .code(ErrorCode.USER_NOT_EXISTED.getCode())
-                                    .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                                    .message("Update user successfully")
+                                    .result(saved_user)
                                     .build()
                     );
-        }
-
-        User user = userRepository.findById(userId).get();
-        //nếu k có thay đổi về mật khẩu thì dùng mật khẩu cũ
-        if(request.getEncryptedPassword()==null){
-            user.setEncryptedPassword(user.getEncryptedPassword());
-        }else {
-            String password = passwordEncoder.encode(request.getEncryptedPassword());
-            user.setEncryptedPassword(password);
-        }
-
-        user.setFullName(request.getFullName());
-        user.setUpdatedAt(LocalDateTime.now());
-
-        //lưu thông tin thay đổi vào db
-        User saved_user = userRepository.save(user);
-
-        return ResponseEntity.ok()
-                .body(
-                        ApiResponse.<User>builder()
-                                .message("Update user successfully")
-                                .result(saved_user)
-                                .build()
-                );
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(
@@ -384,10 +382,9 @@ public class UserServiceImpl implements UserService {
         }
         User user = userRepository.findById(userId).get();
 
-        UserResponse userResponse = new UserResponse().builder()
+        UserResponse userResponse = UserResponse.builder()
                 .fullName(user.getFullName())
                 .email(user.getEmail())
-//                .lineUserId(user.getLineUserId())
                 .build();
 
         return ResponseEntity.ok()

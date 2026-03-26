@@ -29,19 +29,19 @@ public class Payment {
     @Column(name = "amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "currency", length = 255, nullable = false)
+    @Column(name = "currency", nullable = false)
     private String currency;
 
-    @Column(name = "payment_method", length = 255, nullable = false)
+    @Column(name = "payment_method", nullable = false)
     private String paymentMethod;
 
-    @Column(name = "provider_payment_id", length = 255)
+    @Column(name = "provider_payment_id")
     private String providerPaymentId;
 
-    @Column(name = "status", length = 255, nullable = false)
+    @Column(name = "status", nullable = false)
     private String status;
 
-    @Column(name = "failure_reason", length = 255)
+    @Column(name = "failure_reason")
     private String failureReason;
 
     @Column(name = "created_at", nullable = false)

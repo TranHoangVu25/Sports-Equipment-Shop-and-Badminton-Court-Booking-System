@@ -18,4 +18,6 @@ public class OrderRequest {
     private String email;
     private String note;
     private String promotion;
+    //true: COD, false: Stripe
+    private Boolean checkoutType;
 }

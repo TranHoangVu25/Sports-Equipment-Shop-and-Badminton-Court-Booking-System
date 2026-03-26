@@ -4,6 +4,7 @@ import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.common.DateUtil;
 import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
+import com.thv.sport.system.dto.response.order.CheckoutResponse;
 import com.thv.sport.system.dto.response.order.OrderResponse;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
@@ -43,7 +44,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public ResponseEntity<ApiResponse<Order>> checkout(Long userId, OrderRequest request) {
+    public ResponseEntity<ApiResponse<CheckoutResponse>> checkout(Long userId, OrderRequest request) {
 
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -51,7 +52,13 @@ public class OrderServiceImpl implements OrderService {
         if (cart.getCartItems().isEmpty()) {
             throw new RuntimeException("Cart is empty");
         }
-
+        String checkoutType;
+        if(request.getCheckoutType()){
+            checkoutType = Constants.CheckoutMethod.COD;
+        }
+        else {
+            checkoutType = Constants.CheckoutMethod.STRIPE;
+        }
         User u = new User();
         u.setUserId(userId);
         LocalDateTime now = LocalDateTime.now();
@@ -104,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new RuntimeException("User not found")));
         payment.setAmount(totalAmount);
         payment.setCurrency(Constants.Currency.VND);
-        payment.setPaymentMethod(Constants.CheckoutMethod.COD);
+        payment.setPaymentMethod(checkoutType);
         payment.setStatus(Constants.PaymentStatus.PENDING);
         payment.setCreatedAt(LocalDateTime.now());
 
@@ -115,9 +122,15 @@ public class OrderServiceImpl implements OrderService {
         cart.getCartItems().clear();
 
         return ResponseEntity.ok(
-                ApiResponse.<Order>builder()
-                        .message("Checkout COD successfully")
-                        .result(savedOrder)
+                ApiResponse.<CheckoutResponse>builder()
+                        .message("Checkout successfully")
+                        .result(CheckoutResponse.builder()
+                                .orderId(order.getOrderId())
+                                .paymentId(payment.getPaymentId())
+                                .paymentMethod(payment.getPaymentMethod())
+                                .paymentStatus(payment.getStatus())
+                                .paymentAmount(payment.getAmount())
+                                .build())
                         .build()
         );
     }
@@ -128,6 +141,7 @@ public class OrderServiceImpl implements OrderService {
         List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
 
         for (Order order : orders) {
+
             String orderId = DateUtil.formatToDDMMYYYYHHMMSS(order.getCreatedAt()) +"_"+ order.getOrderId();
             OrderResponse response = OrderResponse.builder()
                     .orderId(orderId)
@@ -138,7 +152,6 @@ public class OrderServiceImpl implements OrderService {
                     .build();
             orderResponseList.add(response);
         }
-
 
         return ResponseEntity.ok(
                 ApiResponse.<List<OrderResponse>>builder()

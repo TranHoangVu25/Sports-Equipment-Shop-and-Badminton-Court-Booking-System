@@ -32,8 +32,8 @@ public class SecurityConfig {
             "/webjars/**",
             "/api/v1/home-page/**",
             "/api/v1/search/**",
-            "/api/v1/products/**"
-
+            "/api/v1/products/**",
+            "/api/v1/webhook/**",
     };
 
     @Bean

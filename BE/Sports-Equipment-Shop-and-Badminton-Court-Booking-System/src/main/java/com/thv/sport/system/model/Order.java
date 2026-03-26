@@ -55,6 +55,10 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    //only use when paying by Stripe
+    @Column(name = "expired_at")
+    private LocalDateTime expiredAt;
+
     @Column(name = "total_amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalAmount;
 
