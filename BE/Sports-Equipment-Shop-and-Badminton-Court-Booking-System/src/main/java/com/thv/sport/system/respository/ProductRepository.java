@@ -1,6 +1,8 @@
 package com.thv.sport.system.respository;
 
 import com.thv.sport.system.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,5 +40,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("select p from Product p where p.productId in :ids")
     List<Product> findListProductByProductId(@Param("ids") List<Long> productId);
 
+    Page<Product> findAll(Pageable pageable);
 }
 

@@ -1,6 +1,8 @@
 package com.thv.sport.system.respository;
 
 import com.thv.sport.system.model.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    List<Order> findAllByOrderByCreatedAtDesc();
+    Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     List<Order> findByUserUserIdOrderByCreatedAtDesc(Long userId);
 

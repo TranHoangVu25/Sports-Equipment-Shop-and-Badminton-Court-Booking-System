@@ -6,6 +6,7 @@ import com.thv.sport.system.dto.response.BaseResponse;
 import com.thv.sport.system.dto.response.product.BatchProductResponse;
 import com.thv.sport.system.dto.response.product.ProductDetailResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
+import com.thv.sport.system.model.Product;
 import com.thv.sport.system.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -92,7 +95,7 @@ public class ProductController extends BaseController {
      *
      * @return ResponseEntity with BaseResponse<List<ProductResponse>> and HTTP 200 OK status
      */
-    @GetMapping
+    @GetMapping("/search")
     @Operation(summary = "Get all products",
             description = "Retrieves all products from the system with their images.")
     @ApiResponses(value = {
@@ -100,9 +103,14 @@ public class ProductController extends BaseController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<BaseResponse<List<ProductResponse>>> getAllProducts() {
+    public ResponseEntity<BaseResponse<Page<Product>>> getAllProducts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection
+    ) {
         try {
-            List<ProductResponse> products = productService.getAllProducts();
+            Page<Product> products = productService.getAllProducts(page, size, sortBy, sortDirection);
             return successResponse(products, "SUCCESS.FETCH");
         } catch (Exception e) {
             return internalErrorResponse("Error fetching products: " + e.getMessage());

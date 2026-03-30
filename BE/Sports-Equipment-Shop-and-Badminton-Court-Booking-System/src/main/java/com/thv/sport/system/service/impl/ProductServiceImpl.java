@@ -2,23 +2,25 @@ package com.thv.sport.system.service.impl;
 
 import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.dto.request.product.ProductCreateRequest;
-import com.thv.sport.system.dto.request.product.ProductVariantRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.homepage.ProductHomeResponse;
+import com.thv.sport.system.dto.response.product.BatchProductResponse;
 import com.thv.sport.system.dto.response.product.ProductDetailResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
-import com.thv.sport.system.dto.response.product.BatchProductResponse;
-import com.thv.sport.system.dto.response.product.ProductImageResponse;
 import com.thv.sport.system.dto.response.product.ProductSizeResponse;
 import com.thv.sport.system.dto.response.product.VariantDTO;
 import com.thv.sport.system.model.Product;
 import com.thv.sport.system.model.ProductImage;
 import com.thv.sport.system.model.ProductVariant;
-import com.thv.sport.system.respository.ProductRepository;
 import com.thv.sport.system.respository.ProductImageRepository;
+import com.thv.sport.system.respository.ProductRepository;
 import com.thv.sport.system.respository.ProductVariantRepository;
 import com.thv.sport.system.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,8 +85,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponse> getAllProducts() {
-        return List.of();
+    public Page<Product> getAllProducts(int page, int size, String sortBy, String direction) {
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return productRepository.findAll(pageable);
     }
 
     @Override

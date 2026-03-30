@@ -7,6 +7,7 @@ import com.thv.sport.system.dto.response.product.BatchProductResponse;
 import com.thv.sport.system.dto.response.product.ProductDetailResponse;
 import com.thv.sport.system.dto.response.product.ProductResponse;
 import com.thv.sport.system.model.Product;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -41,7 +42,7 @@ public interface ProductService {
      * Get all products
      * @return List of ProductResponse
      */
-    List<ProductResponse> getAllProducts();
+    Page<Product> getAllProducts(int page, int size, String sortBy, String direction);
 
     /**
      * Update a product

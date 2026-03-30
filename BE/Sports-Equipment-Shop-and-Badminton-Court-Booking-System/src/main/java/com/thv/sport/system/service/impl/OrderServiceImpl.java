@@ -19,13 +19,16 @@ import com.thv.sport.system.respository.CartRepository;
 import com.thv.sport.system.respository.OrderRepository;
 import com.thv.sport.system.respository.PaymentRepository;
 import com.thv.sport.system.respository.ProductRepository;
-import com.thv.sport.system.respository.ProductVariantRepository;
 import com.thv.sport.system.respository.UserRepository;
 import com.thv.sport.system.service.OrderService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -143,28 +145,47 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
+    @Override
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(int page, int size) {
         List<OrderResponse> orderResponseList = new ArrayList<>();
+        List<OrderItemResponse> orderItemList = new ArrayList<>();
 
-        List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
+        Pageable pageable = PageRequest.of(page, size);
 
-        for (Order order : orders) {
+        Page<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
 
-            String orderId = DateUtil.formatToDDMMYYYYHHMMSS(order.getCreatedAt()) +"_"+ order.getOrderId();
+        for (Order order : orders.getContent()) {
+            orderItemList.clear();
+            for (OrderItem orderItem : order.getOrderItems()) {
+                orderItemList.add(OrderItemResponse.builder()
+                        .productName(orderItem.getProduct().getName())
+                        .quantity(orderItem.getQuantity())
+                        .price(orderItem.getPrice())
+                        .sku(orderItem.getSku())
+                        .size(orderItem.getSize())
+                        .imgUrl(orderItem.getProduct().getProductImages().getFirst().getImageUrl())
+                        .build());
+            }
+            String orderId = DateUtil.formatToDDMMYYYYHHMMSS(order.getCreatedAt()) + "_" + order.getOrderId();
             OrderResponse response = OrderResponse.builder()
                     .orderId(orderId)
                     .createdAt(order.getCreatedAt())
                     .locationDetail(order.getLocationDetail())
                     .totalAmount(order.getTotalAmount())
                     .status(order.getStatus())
+                    .recipient(order.getRecipient())
+                    .phoneNumber(order.getPhoneNumber())
+                    .orderItems(orderItemList)
                     .build();
             orderResponseList.add(response);
         }
 
+        Page<OrderResponse> responses = new PageImpl<>(
+                orderResponseList, pageable, orders.getTotalElements());
         return ResponseEntity.ok(
-                ApiResponse.<List<OrderResponse>>builder()
+                ApiResponse.<Page<OrderResponse>>builder()
                         .message("Get orders successfully")
-                        .result(orderResponseList)
+                        .result(responses)
                         .build()
         );
     }
