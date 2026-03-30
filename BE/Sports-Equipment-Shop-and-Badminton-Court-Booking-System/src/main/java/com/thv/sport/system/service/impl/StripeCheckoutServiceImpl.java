@@ -11,9 +11,14 @@ import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.order.CheckoutResponse;
 import com.thv.sport.system.model.Order;
+import com.thv.sport.system.model.OrderItem;
 import com.thv.sport.system.model.Payment;
+import com.thv.sport.system.model.Product;
+import com.thv.sport.system.model.ProductVariant;
 import com.thv.sport.system.respository.OrderRepository;
 import com.thv.sport.system.respository.PaymentRepository;
+import com.thv.sport.system.respository.ProductRepository;
+import com.thv.sport.system.respository.ProductVariantRepository;
 import com.thv.sport.system.service.StripeCheckoutService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +28,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StreamUtils;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +49,8 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
     private final OrderServiceImpl orderServiceImpl;
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     public static final String SIZE_DEFAULT = "DEFAULT";
 
@@ -116,7 +128,6 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
     }
 
     @Override
-    @Transactional
     public ResponseEntity<String> handleStripeWebhook(HttpServletRequest request) {
 
         final String payload;
@@ -159,6 +170,7 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
             }
         } catch (Exception e) {
             log.error("Error while handling Stripe event", e);
+            throw new RuntimeException("Error while handling Stripe event", e);
         }
 
         return ResponseEntity.ok("Webhook ok");
@@ -189,8 +201,51 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
             payment.setStatus(Constants.PaymentStatus.COMPLETED);
             payment.setProviderPaymentId(paymentIntentId);
 
+            //get list product id
+            List<Long> productIs = order.getOrderItems()
+                    .stream()
+                    .map(OrderItem::getProductId)
+                    .toList();
+
+            //get product list
+            List<Product> productList = productRepository.findListProductByProductId(productIs);
+
+            //get order item map by sku
+            Map<String, OrderItem> orderItemMap = order.getOrderItems().stream()
+                    .collect(Collectors.toMap(
+                            OrderItem::getSku,
+                            Function.identity()
+                    ));
+
+            for (Product product : productList) {
+                for (ProductVariant variant : product.getProductVariants()) {
+                    OrderItem orderItem = orderItemMap.get(variant.getSku());
+                    if (!ObjectUtils.isEmpty(orderItem)) {
+
+                        int quantityOrdered = orderItem.getQuantity();
+
+                        //Trừ tồn kho variant
+                        variant.setQuantity(variant.getQuantity() - quantityOrdered);
+
+                        //Trừ tồn kho product
+                        product.setQuantity(product.getQuantity() - quantityOrdered);
+
+                        //Check âm
+                        if (variant.getQuantity() < 0) {
+                            throw new RuntimeException("Variant out of stock: " + variant.getSku());
+                        }
+
+                        if (product.getQuantity() < 0) {
+                            throw new RuntimeException("Product out of stock: " + product.getProductId());
+                        }
+                    }
+                }
+                productRepository.save(product);
+            }
+
         } catch (Exception e) {
             log.error("Failed to process checkout.session.completed", e);
+            throw new RuntimeException("Failed to process checkout.session.completed", e);
         }
     }
 }
