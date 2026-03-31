@@ -163,9 +163,6 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
             log.error("Error while handling Stripe event", e);
             throw new RuntimeException("Error while handling Stripe event", e);
         }
-
         return ResponseEntity.ok("Webhook ok");
     }
-
-
 }

@@ -16,32 +16,42 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@Table(name = "court")
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "court_slot")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Court {
+public class CourtSlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "court_id")
-    private Long courtId;
+    private Long id;
 
+    // 🔥 gắn với center (KHÔNG gắn court)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "court_center_id", nullable = false)
-    @JsonBackReference(value = "center-court")
+    @JsonBackReference(value = "center-slot")
     private CourtCenter courtCenter;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    // 2: Monday ... 8: Sunday
+    @Column(name = "day_of_week", nullable = false)
+    private Integer dayOfWeek;
 
-    @Column(name = "type")
-    private String type; // sân 5, sân 7, cầu lông...
+    @Column(name = "start_time", nullable = false)
+    private LocalTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalTime endTime;
 
     @Column(name = "status")
-    private Integer status; // 1: hoạt động, 0: bảo trì
-}
+    private Integer status; // mở / đóng
 
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+}

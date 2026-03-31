@@ -16,32 +16,50 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 @Entity
-@Table(name = "court")
+@Table(name = "pricing_rule")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Court {
+public class PricingRule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "court_id")
-    private Long courtId;
+    private Long id;
 
+    // 🔥 gắn với center
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "court_center_id", nullable = false)
-    @JsonBackReference(value = "center-court")
+    @JsonBackReference(value = "center-pricing")
     private CourtCenter courtCenter;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(name = "day_of_week")
+    private Integer dayOfWeek;
 
-    @Column(name = "type")
-    private String type; // sân 5, sân 7, cầu lông...
+    @Column(name = "specific_date")
+    private LocalDate specificDate; // ưu tiên cao hơn dayOfWeek
 
-    @Column(name = "status")
-    private Integer status; // 1: hoạt động, 0: bảo trì
+    @Column(name = "start_time", nullable = false)
+    private LocalTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalTime endTime;
+
+    @Column(name = "price_per_hour", nullable = false, precision = 10, scale = 2)
+    private BigDecimal pricePerHour;
+
+    @Column(name = "rule_type")
+    private String ruleType; // NORMAL / PEAK / HOLIDAY
+
+    @Column(name = "priority")
+    private Integer priority; // ưu tiên rule
+
+    @Column(name = "active")
+    private Boolean active;
 }
-

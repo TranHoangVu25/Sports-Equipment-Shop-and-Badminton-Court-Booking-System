@@ -35,7 +35,7 @@ public class BookingPayment {
     private String providerPaymentId;
 
     @Column(name = "status", nullable = false)
-    private String status;
+    private String status; // PENDING, SUCCESS, FAILED
 
     @Column(name = "failure_reason")
     private String failureReason;

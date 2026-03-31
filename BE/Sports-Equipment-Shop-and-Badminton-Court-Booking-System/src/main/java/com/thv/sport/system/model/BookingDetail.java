@@ -3,6 +3,8 @@ package com.thv.sport.system.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "booking_detail")
@@ -11,24 +13,33 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingDetail {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "booking_id")
-    private Long bookingId;
+    private Long id;
+
+    // FK tới booking
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "court_id", nullable = false)
     private Court court;
 
-    @Column(name = "price_per_hour", precision = 10, scale = 2, nullable = false)
+    // ngày cụ thể
+    @Column(name = "booking_date", nullable = false)
+    private LocalDate bookingDate;
+
+    // thời gian chuẩn
+    @Column(name = "start_time", nullable = false)
+    private LocalTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalTime endTime;
+
+    // giá tại thời điểm đặt
+    @Column(name = "price_per_hour", precision = 10, scale = 2)
     private BigDecimal pricePerHour;
-
-    @Column(name = "start_time")
-    private String startTime;
-
-    @Column(name = "end_time")
-    private String endTime;
 
     @Column(name = "total_price", precision = 10, scale = 2)
     private BigDecimal totalPrice;
