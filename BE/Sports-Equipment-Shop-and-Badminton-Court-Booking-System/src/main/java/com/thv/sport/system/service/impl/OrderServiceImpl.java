@@ -146,13 +146,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(int page, int size) {
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(Long userId, int page, int size) {
         List<OrderResponse> orderResponseList = new ArrayList<>();
         List<OrderItemResponse> orderItemList = new ArrayList<>();
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
+//        Page<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<Order> orders = orderRepository.findAllByUser_UserIdOrderByCreatedAtDesc(userId, pageable);
 
         for (Order order : orders.getContent()) {
             orderItemList.clear();
@@ -190,24 +191,12 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
-    public ResponseEntity<ApiResponse<List<Order>>> getOrdersByUser(Long userId) {
-
-        List<Order> orders = orderRepository
-                .findByUserUserIdOrderByCreatedAtDesc(userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.<List<Order>>builder()
-                        .message("Get user orders successfully")
-                        .result(orders)
-                        .build()
-        );
-    }
-
     public ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId, Long userId) {
         List<OrderItemResponse>  orderItemResponseList = new ArrayList<>();
 
         Order order = orderRepository
-                .findOrderByOrderIdAndUserId(orderId, userId).orElseThrow(() -> new RuntimeException("Order not found"));
+                .findOrderByOrderIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
         List<Long> proIds = order.getOrderItems().stream()
                 .map(OrderItem::getProductId)
