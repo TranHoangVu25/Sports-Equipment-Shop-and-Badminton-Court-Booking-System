@@ -6,7 +6,6 @@ import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.order.CheckoutResponse;
 import com.thv.sport.system.dto.response.order.OrderResponse;
-import com.thv.sport.system.model.Order;
 import com.thv.sport.system.service.OrderService;
 import com.thv.sport.system.service.StripeCheckoutService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping(Constants.ApiPath.API_ORDER)
@@ -42,20 +39,14 @@ public class OrderController {
         return orderService.checkout(userId, request);
     }
 
-    @GetMapping("get-list-order")
+    @GetMapping("/get-user-list-order")
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(
+            @AuthenticationPrincipal UserPrincipal user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size
     ) {
-        return orderService.getAllOrders(page,size);
-    }
-
-    @GetMapping("get-user-list-order")
-    public ResponseEntity<ApiResponse<List<Order>>> getUserOrders(
-            @AuthenticationPrincipal UserPrincipal user
-    ) {
         Long userId = Long.valueOf(user.getUserId());
-        return orderService.getOrdersByUser(userId);
+        return orderService.getAllOrders(userId, page,size);
     }
 
     @PostMapping("/checkout-stripe-url")
@@ -82,7 +73,7 @@ public class OrderController {
     }
 
 
-    @GetMapping("get-order-detail/{orderId}")
+    @GetMapping("/get-order-detail/{orderId}")
     public ResponseEntity<ApiResponse<OrderResponse>> getUserOrders(
             @AuthenticationPrincipal UserPrincipal user,
             @PathVariable("orderId") Long orderId

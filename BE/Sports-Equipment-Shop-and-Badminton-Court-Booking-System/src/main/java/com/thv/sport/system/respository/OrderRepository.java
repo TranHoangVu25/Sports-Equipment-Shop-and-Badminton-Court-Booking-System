@@ -14,7 +14,11 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
+    // find all order in system
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    //find order by user id
+    Page<Order> findAllByUser_UserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     List<Order> findByUserUserIdOrderByCreatedAtDesc(Long userId);
 
