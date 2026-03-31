@@ -24,6 +24,7 @@ public class OrderResponse {
     private String status;
     private String recipient;
     private String phoneNumber;
-    // stripe thanh toán chỉ sử dụng danh sách item
+    private BigDecimal discount;
+    private BigDecimal subtotal;
     private List<OrderItemResponse> orderItems;
 }

@@ -59,8 +59,17 @@ public class Order {
     @Column(name = "expired_at")
     private LocalDateTime expiredAt;
 
+    //amount after using promotion code
     @Column(name = "total_amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalAmount;
+
+    //discount value
+    @Column(name = "discount", precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    //price before using promotion code
+    @Column(name = "subtotal", precision = 10, scale = 2)
+    private BigDecimal subtotal;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference

@@ -213,6 +213,7 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderItem orderItem : order.getOrderItems()) {
             OrderItemResponse orderItemResponse = OrderItemResponse.builder()
+                    .productId(orderItem.getProductId())
                     .productName(productMap.get(orderItem.getProductId()).getName())
                     .quantity(orderItem.getQuantity())
                     .price(orderItem.getPrice())
@@ -229,9 +230,12 @@ public class OrderServiceImpl implements OrderService {
                         .result(OrderResponse.builder()
                                 .orderId(String.valueOf(order.getOrderId()))
                                 .phoneNumber(order.getPhoneNumber())
+                                .createdAt(order.getCreatedAt())
                                 .locationDetail(order.getLocationDetail())
                                 .recipient(order.getRecipient())
                                 .totalAmount(order.getTotalAmount())
+                                .subtotal(order.getSubtotal())
+                                .discount(order.getDiscount())
                                 .status(order.getStatus())
                                 .orderItems(orderItemResponseList)
                                 .build())

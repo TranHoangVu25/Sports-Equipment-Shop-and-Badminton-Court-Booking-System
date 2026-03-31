@@ -44,6 +44,13 @@ public class Payment {
     @Column(name = "failure_reason")
     private String failureReason;
 
+    @Column(name = "discount", precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    //price before using promotion code
+    @Column(name = "subtotal", precision = 10, scale = 2)
+    private BigDecimal subtotal;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
