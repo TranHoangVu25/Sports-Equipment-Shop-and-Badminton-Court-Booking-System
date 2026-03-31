@@ -1,25 +1,21 @@
 package com.thv.sport.system.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
-import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.order.CheckoutResponse;
 import com.thv.sport.system.model.Order;
-import com.thv.sport.system.model.OrderItem;
 import com.thv.sport.system.model.Payment;
-import com.thv.sport.system.model.Product;
-import com.thv.sport.system.model.ProductVariant;
 import com.thv.sport.system.respository.OrderRepository;
 import com.thv.sport.system.respository.PaymentRepository;
 import com.thv.sport.system.respository.ProductRepository;
 import com.thv.sport.system.respository.ProductVariantRepository;
 import com.thv.sport.system.service.StripeCheckoutService;
+import com.thv.sport.system.util.HandleCheckoutSession;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,15 +24,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StreamUtils;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,12 +36,10 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
     @Value("${stripe.webhook-secret}")
     private String webhookSecret;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final OrderServiceImpl orderServiceImpl;
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
-    private final ProductVariantRepository productVariantRepository;
+    private final HandleCheckoutSession handleCheckoutSessionCompleted;
 
     public static final String SIZE_DEFAULT = "DEFAULT";
 
@@ -74,8 +63,10 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
                         .setLocale(SessionCreateParams.Locale.EN)
                         .setSuccessUrl("http://localhost:5173/profile")
                         .setCancelUrl("http://localhost:5173/payment/failed")
+                        .setAllowPromotionCodes(true)
                         .putMetadata("orderId", String.valueOf(order.getOrderId()))
                         .putMetadata("paymentId", String.valueOf(payment.getPaymentId()))
+                        .putMetadata("totalPrice", String.valueOf(payment.getAmount()))
                         .putMetadata("userId", String.valueOf(userId));
 
         BigDecimal totalVnd = BigDecimal.ZERO;
@@ -164,7 +155,7 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
 
         try {
             if ("checkout.session.completed".equals(event.getType())) {
-                handleCheckoutSessionCompleted(payload);
+                handleCheckoutSessionCompleted.handleCheckoutSessionCompleted(payload);
             } else {
                 log.info("Ignore Stripe event type={}", event.getType());
             }
@@ -176,76 +167,5 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
         return ResponseEntity.ok("Webhook ok");
     }
 
-    // ================= PRIVATE HANDLE =================
-    @Transactional
-    protected void handleCheckoutSessionCompleted(String payload) {
 
-        try {
-            JsonNode root = objectMapper.readTree(payload);
-            JsonNode session = root.path("data").path("object");
-
-            String paymentIntentId = session.path("payment_intent").asText();
-
-            JsonNode metadata = session.path("metadata");
-            String orderId = metadata.path("orderId").asText(null);
-            String paymentId = metadata.path("paymentId").asText(null);
-
-            Order order = orderRepository.findById(Long.valueOf(orderId))
-                    .orElseThrow(() -> new RuntimeException("Order not found"));
-            order.setStatus(Constants.OrderStatus.SUCCESS);
-
-            orderRepository.save(order);
-
-            Payment payment = paymentRepository.findById(Long.valueOf(paymentId))
-                    .orElseThrow(() -> new RuntimeException("Payment not found"));
-            payment.setStatus(Constants.PaymentStatus.COMPLETED);
-            payment.setProviderPaymentId(paymentIntentId);
-
-            //get list product id
-            List<Long> productIs = order.getOrderItems()
-                    .stream()
-                    .map(OrderItem::getProductId)
-                    .toList();
-
-            //get product list
-            List<Product> productList = productRepository.findListProductByProductId(productIs);
-
-            //get order item map by sku
-            Map<String, OrderItem> orderItemMap = order.getOrderItems().stream()
-                    .collect(Collectors.toMap(
-                            OrderItem::getSku,
-                            Function.identity()
-                    ));
-
-            for (Product product : productList) {
-                for (ProductVariant variant : product.getProductVariants()) {
-                    OrderItem orderItem = orderItemMap.get(variant.getSku());
-                    if (!ObjectUtils.isEmpty(orderItem)) {
-
-                        int quantityOrdered = orderItem.getQuantity();
-
-                        //Trừ tồn kho variant
-                        variant.setQuantity(variant.getQuantity() - quantityOrdered);
-
-                        //Trừ tồn kho product
-                        product.setQuantity(product.getQuantity() - quantityOrdered);
-
-                        //Check âm
-                        if (variant.getQuantity() < 0) {
-                            throw new RuntimeException("Variant out of stock: " + variant.getSku());
-                        }
-
-                        if (product.getQuantity() < 0) {
-                            throw new RuntimeException("Product out of stock: " + product.getProductId());
-                        }
-                    }
-                }
-                productRepository.save(product);
-            }
-
-        } catch (Exception e) {
-            log.error("Failed to process checkout.session.completed", e);
-            throw new RuntimeException("Failed to process checkout.session.completed", e);
-        }
-    }
 }

@@ -21,7 +21,7 @@ public class Court {
     @JoinColumn(name = "court_center_id", nullable = false)
     private CourtCenter courtCenter;
 
-    @Column(name = "name", length = 255, nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
     @Column(name = "price_per_hour", precision = 10, scale = 2, nullable = false)
