@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,13 +28,14 @@ import java.time.LocalTime;
 @Entity
 @Table(name = "court_slot")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Builder
 public class CourtSlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔥 gắn với center (KHÔNG gắn court)
+    //gắn với center (KHÔNG gắn court)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "court_center_id", nullable = false)
     @JsonBackReference(value = "center-slot")
@@ -50,8 +52,11 @@ public class CourtSlot {
     private LocalTime endTime;
 
     @Column(name = "status")
-    private Integer status; // mở / đóng
+    private String status; // mở / đóng
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", updatable = false)
+    private LocalDateTime updatedAt;
 }

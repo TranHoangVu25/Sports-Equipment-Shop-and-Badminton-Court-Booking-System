@@ -12,9 +12,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "court")
@@ -23,6 +26,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Builder
 public class Court {
 
     @Id
@@ -42,6 +46,11 @@ public class Court {
     private String type; // sân 5, sân 7, cầu lông...
 
     @Column(name = "status")
-    private Integer status; // 1: hoạt động, 0: bảo trì
-}
+    private String status;
 
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", updatable = false)
+    private LocalDateTime updatedAt;
+}

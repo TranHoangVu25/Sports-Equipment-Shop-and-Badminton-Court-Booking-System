@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,6 +26,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Builder
 public class CourtCenter {
 
     @Id
@@ -44,11 +46,15 @@ public class CourtCenter {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    //0: không xóa, 1 xóa
+    @Column(name = "deleted")
+    private Integer deleted;
 
     //danh sách sân
     @OneToMany(mappedBy = "courtCenter", cascade = CascadeType.ALL, orphanRemoval = true)

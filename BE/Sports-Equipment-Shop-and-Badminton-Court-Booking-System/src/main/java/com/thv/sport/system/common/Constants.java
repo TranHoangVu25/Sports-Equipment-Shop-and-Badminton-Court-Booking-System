@@ -1,8 +1,13 @@
 package com.thv.sport.system.common;
 
+import lombok.Getter;
+
+import java.time.LocalTime;
+
 /**
  * Constants class containing all API endpoints and application-wide constants
  */
+@Getter
 public class Constants {
 
     // Base API path
@@ -179,6 +184,34 @@ public class Constants {
     public static class ExchangeRate {
         // 1JPY = 170 VND
         public static final long VND_PER_JPY = 170;
+    }
+
+    public static class CourtStatus {
+        public static final String ACTIVE = "ACTIVE";
+        public static final String INACTIVE = "INACTIVE";
+    }
+
+    public static class ActiveStatus {
+        public static final Boolean TRUE_VALUE = Boolean.TRUE;
+        public static final Boolean FALSE_VALUE = Boolean.FALSE;
+    }
+    //NORMAL → giá bình thường
+    //PEAK → giờ cao điểm (18h–22h)
+    //HOLIDAY → ngày lễ
+    public static class CourtRuleType {
+        public static final String NORMAL = "NORMAL";
+        public static final String PEAK = "PEAK";
+        public static final String HOLIDAY = "HOLIDAY";
+    }
+
+    public static class DeleteFlag {
+        public static final Integer TRUE = 1;
+        public static final Integer FALSE = 0;
+    }
+
+    public static class CourtTimeSlotDefault {
+        public static final LocalTime START_TIME = LocalTime.of(5, 0);
+        public static final LocalTime END_TIME = LocalTime.of(23, 59);
     }
 }
 

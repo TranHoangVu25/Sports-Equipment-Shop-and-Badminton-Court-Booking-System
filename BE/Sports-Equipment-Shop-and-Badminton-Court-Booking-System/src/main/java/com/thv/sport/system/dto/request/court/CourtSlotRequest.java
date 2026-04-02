@@ -22,5 +22,5 @@ public class CourtSlotRequest {
     private LocalTime startTime;
     private LocalTime endTime;
 
-    private Integer status;
+    private String status;
 }
