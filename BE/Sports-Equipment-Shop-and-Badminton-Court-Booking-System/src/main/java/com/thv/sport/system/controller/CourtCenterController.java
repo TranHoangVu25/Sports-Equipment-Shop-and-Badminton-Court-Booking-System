@@ -3,6 +3,7 @@ package com.thv.sport.system.controller;
 import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.dto.request.court.CourtCenterRegisterRequest;
 import com.thv.sport.system.dto.response.BaseResponse;
+import com.thv.sport.system.dto.response.courtcenter.CourtCenterResponse;
 import com.thv.sport.system.model.CourtCenter;
 import com.thv.sport.system.service.CourtCenterService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RestController
@@ -32,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CourtCenterController extends BaseController {
     CourtCenterService courtCenterService;
 
-    @PreAuthorize("hasAuthority(T(com.thv.sport.system.enums.UserRole).USER.value)")
+    @PreAuthorize("hasAuthority(T(com.thv.sport.system.enums.UserRole).ADMIN.value)")
     @PostMapping("/create")
     @Operation(
             summary = "Create court center",
@@ -101,15 +104,15 @@ public class CourtCenterController extends BaseController {
         return successResponse(response, "success", null);
     }
 
-    @PreAuthorize("hasAuthority(T(com.thv.sport.system.enums.UserRole).USER.value)")
+    @PreAuthorize("hasAuthority(T(com.thv.sport.system.enums.UserRole).ADMIN.value)")
     @PutMapping("/update/{courtCenterId}")
     @Operation(
-            summary = "Create court center",
+            summary = "Update court center",
             description = "",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Update template successfully",
+                            description = "Update court successfully",
                             content = @Content(
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = BaseResponse.class)
@@ -135,5 +138,37 @@ public class CourtCenterController extends BaseController {
     ) {
         CourtCenter response = courtCenterService.updateCourt(request, courtCenterId);
         return successResponse(response, "court.center.update.success", null);
+    }
+
+    @GetMapping("/search")
+    @Operation(
+            summary = "Get list court center",
+            description = "",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Get list court center successfully",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = BaseResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - user is not authenticated",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = BaseResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Internal server error"
+                    )
+            }
+    )
+    public ResponseEntity<BaseResponse<List<CourtCenterResponse>>> getHomeProducts() {
+        List<CourtCenterResponse> response = courtCenterService.search();
+        return successResponse(response, "common.success", null);
     }
 }

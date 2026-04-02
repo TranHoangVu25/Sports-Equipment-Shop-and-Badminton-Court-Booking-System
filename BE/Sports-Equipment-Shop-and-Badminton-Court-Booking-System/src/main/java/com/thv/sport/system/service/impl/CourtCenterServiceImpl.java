@@ -6,6 +6,7 @@ import com.thv.sport.system.dto.request.court.CourtCenterRegisterRequest;
 import com.thv.sport.system.dto.request.court.CourtRequest;
 import com.thv.sport.system.dto.request.court.CourtSlotRequest;
 import com.thv.sport.system.dto.request.court.PricingRuleRequest;
+import com.thv.sport.system.dto.response.courtcenter.CourtCenterResponse;
 import com.thv.sport.system.model.Court;
 import com.thv.sport.system.model.CourtCenter;
 import com.thv.sport.system.model.CourtCenterImage;
@@ -13,7 +14,6 @@ import com.thv.sport.system.model.CourtSlot;
 import com.thv.sport.system.model.PricingRule;
 import com.thv.sport.system.respository.CourtCenterImageRepository;
 import com.thv.sport.system.respository.CourtCenterRepository;
-import com.thv.sport.system.respository.CourtRepository;
 import com.thv.sport.system.service.CourtCenterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CourtCenterServiceImpl implements CourtCenterService {
     private final CourtCenterRepository courtCenterRepository;
-    private final CourtRepository courtRepository;
     private final CourtCenterImageRepository courtCenterImageRepository;
 
     @Transactional
@@ -484,5 +483,65 @@ public class CourtCenterServiceImpl implements CourtCenterService {
     public CourtCenter getCourtDetails(Long courtCenterId) {
         return courtCenterRepository.findById(courtCenterId)
                 .orElseThrow(() -> new RuntimeException("court.center.not.existed"));
+    }
+
+    @Override
+    public List<CourtCenterResponse> search() {
+        List<CourtCenter> courtCenters = courtCenterRepository.findAll();
+        List<CourtCenterResponse> courtCenterResponses = new ArrayList<>();
+
+        List<Long> courtCenterIds = courtCenters.stream()
+                .map(CourtCenter::getCourtCenterId)
+                .toList();
+
+        List<CourtCenterImage> courtCenterImages = courtCenterImageRepository.findListImgByCourCenterId(courtCenterIds);
+
+        Map<Long, List<CourtCenterImage>> courtCenterImageMap = courtCenterImages.stream()
+                .collect(Collectors.groupingBy(image -> image.getCourtCenter().getCourtCenterId()));
+
+        if (!ObjectUtils.isEmpty(courtCenterIds)) {
+
+            for (CourtCenter courtCenter : courtCenters) {
+
+                List<CourtCenterImage> imgList = courtCenterImageMap.get(courtCenter.getCourtCenterId());
+
+                if (ObjectUtils.isEmpty(imgList)) {
+                    continue;
+                }
+
+                String thumbnailUrl = "";
+                
+                for (CourtCenterImage image : imgList) {
+                    if (ObjectUtils.isEmpty(image.getIsThumbnail())) {
+                        continue;
+                    }
+                    if(image.getIsThumbnail()) {
+                        thumbnailUrl = image.getImageUrl();
+                    }
+                }
+
+                CourtCenterResponse courtCenterResponse = CourtCenterResponse.builder()
+                        .courtCenterId(courtCenter.getCourtCenterId())
+                        .name(courtCenter.getName())
+                        .locationDetail(courtCenter.getLocationDetail())
+                        .phoneNumber(courtCenter.getPhoneNumber())
+                        .imgUrl(thumbnailUrl)
+                        .deleted(courtCenter.getDeleted())
+                        .createdAt(courtCenter.getCreatedAt())
+                        .build();
+
+                if (!courtCenterResponse.getDeleted().equals(Constants.DeleteFlag.FALSE)) {
+                    continue;
+                }
+
+                courtCenterResponses.add(courtCenterResponse);
+            }
+        }
+        return courtCenterResponses;
+    }
+
+    @Override
+    public void deleteCourtCenter(List<Long> ids) {
+
     }
 }
