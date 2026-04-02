@@ -17,18 +17,24 @@ public class PricingRuleRequest {
 
     private Long id;
 
+    //thứ nào trong tuần
     private Integer dayOfWeek;
 
+    //ngày đặc biệt
     private LocalDate specificDate;
 
     private LocalTime startTime;
+
     private LocalTime endTime;
 
+    //giá mỗi giờ
     private BigDecimal pricePerHour;
 
     private String ruleType;
 
+    //độ ưu tiên của giá
     private Integer priority;
 
+    //còn sân hay k
     private Boolean active;
 }

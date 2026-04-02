@@ -17,5 +17,5 @@ public class CourtRequest {
 
     private String name;
     private String type;
-    private Integer status;
+    private String status;
 }

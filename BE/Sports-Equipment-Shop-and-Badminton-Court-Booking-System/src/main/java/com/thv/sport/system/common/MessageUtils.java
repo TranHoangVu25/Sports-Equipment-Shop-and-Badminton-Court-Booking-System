@@ -1,41 +1,45 @@
 package com.thv.sport.system.common;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.stereotype.Component;
+
 /**
- * Utility class for retrieving messages from message codes
+ * Utility class for retrieving messages from message properties files
  */
+@Component
 public class MessageUtils {
 
+    private static MessageSource messageSource;
+
+    public MessageUtils(MessageSource messageSource) {
+        MessageUtils.messageSource = messageSource;
+    }
+
     /**
-     * Get message from message code
-     * @param messageCode the message code
-     * @return the message corresponding to the code
+     * Get localized message by message code using current request locale
+     * @param messageCode the message key
+     * @return localized message
      */
     public static String getMessage(String messageCode) {
-        // This can be extended to use ResourceBundle or message properties files
-        // For now, return the code itself as a simple implementation
-        return getMessageByCode(messageCode);
+        return messageSource.getMessage(
+                messageCode,
+                null,
+                LocaleContextHolder.getLocale()
+        );
     }
 
     /**
-     * Map message codes to messages
+     * Get localized message with arguments
+     * @param messageCode the message key
+     * @param args arguments for placeholders
+     * @return localized message
      */
-    private static String getMessageByCode(String code) {
-        return switch (code) {
-            case "SUCCESS" -> "Operation successful";
-            case "SUCCESS.CREATE" -> "Created successfully";
-            case "SUCCESS.UPDATE" -> "Updated successfully";
-            case "SUCCESS.DELETE" -> "Deleted successfully";
-            case "SUCCESS.FETCH" -> "Fetched successfully";
-
-            case "ERROR.VALIDATION" -> "Validation failed";
-            case "ERROR.NOT_FOUND" -> "Resource not found";
-            case "ERROR.UNAUTHORIZED" -> "Unauthorized access";
-            case "ERROR.FORBIDDEN" -> "Access forbidden";
-            case "ERROR.INTERNAL" -> "Internal server error";
-            case "ERROR.DUPLICATE" -> "Duplicate resource";
-
-            default -> code;
-        };
+    public static String getMessage(String messageCode, Object... args) {
+        return messageSource.getMessage(
+                messageCode,
+                args,
+                LocaleContextHolder.getLocale()
+        );
     }
 }
-
