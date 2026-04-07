@@ -1,6 +1,5 @@
 package com.thv.sport.system.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
@@ -12,8 +11,6 @@ import com.thv.sport.system.model.Order;
 import com.thv.sport.system.model.Payment;
 import com.thv.sport.system.respository.OrderRepository;
 import com.thv.sport.system.respository.PaymentRepository;
-import com.thv.sport.system.respository.ProductRepository;
-import com.thv.sport.system.respository.ProductVariantRepository;
 import com.thv.sport.system.service.StripeCheckoutService;
 import com.thv.sport.system.util.HandleCheckoutSession;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StreamUtils;
 
 import java.math.BigDecimal;
@@ -48,8 +46,15 @@ public class StripeCheckoutServiceImpl implements StripeCheckoutService {
     public String createCheckoutSession(OrderRequest request, Long userId) {
 
         CheckoutResponse response = orderServiceImpl.checkout(userId, request).getBody().getResult();
-        Long paymentId = response.getPaymentId();
-        Long orderId = response.getOrderId();
+
+        Long paymentId = null;
+        Long orderId = null;
+
+        if (ObjectUtils.isEmpty(response)) {
+            throw new RuntimeException("stripe.checkout.create.order.null");
+        }
+        paymentId = response.getPaymentId();
+        orderId = response.getOrderId();
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));

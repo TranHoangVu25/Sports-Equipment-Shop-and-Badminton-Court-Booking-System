@@ -1,5 +1,6 @@
 package com.thv.sport.system.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,6 +15,8 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Booking {
 
     @Id
