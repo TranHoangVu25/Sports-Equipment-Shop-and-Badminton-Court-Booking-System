@@ -34,6 +34,8 @@ public class SecurityConfig {
             "/api/v1/search/**",
             "/api/v1/products/**",
             "/api/v1/webhook/**",
+            "/api/v1/court-centers/search",
+            "/api/v1/court-centers/detail/**",
     };
 
     @Bean

@@ -101,7 +101,7 @@ public class CourtCenterController extends BaseController {
             @PathVariable Long courtCenterId
     ) {
         CourtCenter response = courtCenterService.getCourtDetails(courtCenterId);
-        return successResponse(response, "success", null);
+        return successResponse(response, "common.success", null);
     }
 
     @PreAuthorize("hasAuthority(T(com.thv.sport.system.enums.UserRole).ADMIN.value)")

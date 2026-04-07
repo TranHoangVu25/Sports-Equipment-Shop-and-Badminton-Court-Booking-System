@@ -51,3 +51,13 @@ jwt:
 stripe:
   secret-key:
   webhook-secret:
+
+momo:
+partner-code:
+access-key:
+secret-key:
+endpoint: https:
+redirect-url: http:
+ipn-url: https:
+request-type:
+lang:

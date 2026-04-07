@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -122,6 +124,135 @@ public class HandleCheckoutSession {
         } catch (Exception e) {
             log.error("Failed to process checkout.session.completed", e);
             throw new RuntimeException("Failed to process checkout.session.completed", e);
+        }
+    }
+
+    // ================= MOMO HANDLE =================
+    @Transactional
+    public void handleMomoIpnSuccess(String payload) {
+        try {
+            JsonNode root = objectMapper.readTree(payload);
+
+            // Chỉ xử lý khi thanh toán thành công
+            int resultCode = root.path("resultCode").asInt(-1);
+            if (resultCode != 0) {
+                log.warn("MoMo payment not successful, resultCode={}", resultCode);
+                return;
+            }
+
+            String providerPaymentId = root.path("transId").asText(null); // transaction id từ MoMo
+            long amountPaid = root.path("amount").asLong(0); // MoMo VND là zero-decimal
+            String extraDataBase64 = root.path("extraData").asText("");
+
+            if (ObjectUtils.isEmpty(extraDataBase64)) {
+                throw new RuntimeException("MoMo extraData is empty");
+            }
+
+            // Decode extraData (Base64 JSON)
+            String extraDataJson = new String(
+                    Base64.getDecoder().decode(extraDataBase64),
+                    StandardCharsets.UTF_8
+            );
+
+            JsonNode extraDataNode = objectMapper.readTree(extraDataJson);
+
+            String orderId = extraDataNode.path("orderId").asText(null);
+            String paymentId = extraDataNode.path("paymentId").asText(null);
+
+            if (ObjectUtils.isEmpty(orderId) || ObjectUtils.isEmpty(paymentId)) {
+                throw new RuntimeException("MoMo extraData missing orderId/paymentId");
+            }
+
+            BigDecimal totalPaid = BigDecimal.valueOf(amountPaid);
+
+            Order order = orderRepository.findById(Long.valueOf(orderId))
+                    .orElseThrow(() -> new RuntimeException("Order not found"));
+
+            // Idempotent: tránh MoMo IPN gọi lại nhiều lần
+            if (Constants.OrderStatus.SUCCESS.equals(order.getStatus())) {
+                log.info("MoMo order already processed, orderId={}", orderId);
+                return;
+            }
+
+            // Vì MoMo không tự trả subtotal/discount chi tiết như Stripe session
+            // => dùng dữ liệu đã có sẵn từ order/payment lúc checkout trước đó
+            BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : totalPaid;
+            BigDecimal discount = subtotal.subtract(totalPaid);
+
+            if (discount.compareTo(BigDecimal.ZERO) < 0) {
+                discount = BigDecimal.ZERO;
+            }
+
+            order.setStatus(Constants.OrderStatus.SUCCESS);
+            order.setTotalAmount(totalPaid);
+            order.setDiscount(discount);
+            order.setSubtotal(subtotal);
+            orderRepository.save(order);
+
+            Payment payment = paymentRepository.findById(Long.valueOf(paymentId))
+                    .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+            payment.setStatus(Constants.PaymentStatus.COMPLETED);
+            payment.setProviderPaymentId(providerPaymentId);
+            payment.setAmount(totalPaid);
+            payment.setDiscount(discount);
+            payment.setSubtotal(subtotal);
+            paymentRepository.save(payment);
+
+            deductStock(order);
+
+            log.info("MoMo payment processed successfully, orderId={}, paymentId={}, transId={}",
+                    orderId, paymentId, providerPaymentId);
+
+        } catch (Exception e) {
+            log.error("Failed to process MoMo IPN success", e);
+            throw new RuntimeException("Failed to process MoMo IPN success", e);
+        }
+    }
+
+    // ================= COMMON STOCK DEDUCT =================
+    private void deductStock(Order order) {
+
+        // get list product id
+        List<Long> productIds = order.getOrderItems()
+                .stream()
+                .map(OrderItem::getProductId)
+                .toList();
+
+        // get product list
+        List<Product> productList = productRepository.findListProductByProductId(productIds);
+
+        // get order item map by sku
+        Map<String, OrderItem> orderItemMap = order.getOrderItems().stream()
+                .collect(Collectors.toMap(
+                        OrderItem::getSku,
+                        Function.identity()
+                ));
+
+        for (Product product : productList) {
+            for (ProductVariant variant : product.getProductVariants()) {
+                OrderItem orderItem = orderItemMap.get(variant.getSku());
+                if (!ObjectUtils.isEmpty(orderItem)) {
+
+                    int quantityOrdered = orderItem.getQuantity();
+
+                    // Trừ tồn kho variant
+                    variant.setQuantity(variant.getQuantity() - quantityOrdered);
+
+                    // Trừ tồn kho product
+                    product.setQuantity(product.getQuantity() - quantityOrdered);
+
+                    // Check âm
+                    if (variant.getQuantity() < 0) {
+                        throw new RuntimeException("Variant out of stock: " + variant.getSku());
+                    }
+
+                    if (product.getQuantity() < 0) {
+                        throw new RuntimeException("Product out of stock: " + product.getProductId());
+                    }
+                }
+            }
+            productRepository.save(product);
         }
     }
 
