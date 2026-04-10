@@ -59,7 +59,8 @@ public class AuthenticationController {
 
     //truyền token vào sẽ trả về valid true or false
     @PostMapping("/introspect")
-    public ApiResponse<IntrospectResponse> authenticate(@RequestBody IntrospectRequest request) throws ParseException, JOSEException {
+    public ApiResponse<IntrospectResponse> authenticate(@RequestBody IntrospectRequest request)
+            throws ParseException, JOSEException {
         var result = authenticationService.introspect(request);
         return ApiResponse.<IntrospectResponse>builder()
                 .result(result)
@@ -155,7 +156,7 @@ public class AuthenticationController {
             @RequestParam("token") String token
     ) {
         log.debug("confirmForgotPassword");
-        String result = Objects.requireNonNull(authenticationService.confirm_password_reset(token)
+        String result = Objects.requireNonNull(authenticationService.confirmPasswordReset(token)
                 .getBody()).getMessage();
 
         String redirectUrl;

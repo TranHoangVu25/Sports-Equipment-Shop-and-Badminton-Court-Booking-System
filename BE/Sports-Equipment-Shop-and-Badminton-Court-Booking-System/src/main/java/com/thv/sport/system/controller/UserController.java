@@ -46,7 +46,7 @@ public class UserController {
 
     //xem tất cả các user để test
     @GetMapping()
-    public ResponseEntity<ApiResponse<List<User>>> getAllUser(){
+    public ResponseEntity<ApiResponse<List<User>>> getAllUser() {
         return userService.getAllUser();
     }
 
@@ -54,14 +54,14 @@ public class UserController {
     public ResponseEntity<ApiResponse<User>> updateUser(
             @RequestBody @Valid UserUpdateRequest request,
             @PathVariable Long userId
-    ){
+    ) {
         return userService.updateUserWithAdminRole(request, userId);
     }
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<ApiResponse<?>> deleteUser(
             @PathVariable Long userId
-    ){
+    ) {
         return userService.deleteUser(userId);
     }
 
@@ -82,14 +82,14 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(
             @PathVariable Long userId
-    ){
+    ) {
         return userService.getUserById(userId);
     }
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> getProfile(
             @AuthenticationPrincipal UserPrincipal user
-    ){
+    ) {
         Integer userId = user.getUserId();
         return userService.getUserById(Long.valueOf(userId));
     }
@@ -98,7 +98,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<String>> changePassword(
             @RequestBody @Valid ChangePasswordRequest request,
             @AuthenticationPrincipal UserPrincipal user
-    ){
+    ) {
         Integer userId = user.getUserId();
         return authenticationService.changePassword(Long.valueOf(userId), request);
     }

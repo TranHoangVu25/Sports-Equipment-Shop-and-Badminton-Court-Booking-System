@@ -16,7 +16,8 @@ public class SendEmail {
 
     public void sendEmailRegister(String confirmToken, String email) {
         String link = "http://localhost:8086/api/v1/auth/confirm?token=" + confirmToken;
-//        String link = "https://fearsome-ollie-correspondently.ngrok-free.dev/api/v1/auth/confirm?token=" + confirmToken;
+//        String link = "https://fearsome-ollie-correspondently.ngrok-free.dev/api/v1/auth/confirm?token="
+//        + confirmToken;
         String htmlContent =
                 "<div style='background:#f4f6f9;padding:40px 0;font-family:Arial,sans-serif;'>"
 
@@ -26,7 +27,8 @@ public class SendEmail {
                         + "<div style='background:linear-gradient(90deg,#0f2027,#203a43,#2c5364);"
                         + "padding:20px;text-align:center;color:white;'>"
                         + "<h2 style='margin:0;font-size:24px;'>QuangVo Shop</h2>"
-                        + "<p style='margin:5px 0 0;font-size:14px;opacity:0.9;'>Sports Equipment & Badminton Court Booking</p>"
+                        + "<p style='margin:5px 0 0;font-size:14px;opacity:0.9;'>" +
+                        "Sports Equipment & Badminton Court Booking</p>"
                         + "</div>"
 
                         + "<div style='padding:30px;color:#333;'>"
@@ -47,7 +49,8 @@ public class SendEmail {
                         + "</a>"
                         + "</div>"
 
-                        + "<p style='font-size:14px;color:#555;'>If you did not create this account, you can safely ignore this email.</p>"
+                        + "<p style='font-size:14px;color:#555;'>If you did not create this account," +
+                        " you can safely ignore this email.</p>"
 
                         + "<p style='margin-top:30px;font-size:15px;'>Best regards,<br>"
                         + "<strong>QuangVo Shop Team</strong></p>"
@@ -67,7 +70,8 @@ public class SendEmail {
     public void sendEmailForgotPassword(String confirmToken, String email) {
 
         String link = "http://localhost:8086/api/v1/auth/confirm-forgot?token=" + confirmToken;
-//        String link = "https://fearsome-ollie-correspondently.ngrok-free.dev/api/v1/auth/confirm-forgot?token=" + confirmToken;
+//        String link = "https://fearsome-ollie-correspondently.ngrok-free.dev/api/v1/auth/confirm-forgot?token="
+//        + confirmToken;
 
         String htmlContent =
                 "<div style='font-family:Arial, sans-serif; line-height:1.6; padding:20px; color:#333;'>"

@@ -37,22 +37,22 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<ApiResponse<List<User>>> getAllUser() {
         try {
-        List<User> users = userRepository.findAll();
-        if (users.isEmpty()) {
+            List<User> users = userRepository.findAll();
+            if (users.isEmpty()) {
+                return ResponseEntity.ok()
+                        .body(
+                                ApiResponse.<List<User>>builder()
+                                        .message("No users found")
+                                        .build()
+                        );
+            }
             return ResponseEntity.ok()
                     .body(
                             ApiResponse.<List<User>>builder()
-                                    .message("No users found")
+                                    .message("Successfully retrieved users")
+                                    .result(users)
                                     .build()
                     );
-        }
-        return ResponseEntity.ok()
-                .body(
-                        ApiResponse.<List<User>>builder()
-                                .message("Successfully retrieved users")
-                                .result(users)
-                                .build()
-                );
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(
@@ -66,67 +66,67 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<ApiResponse<String>> registerAccount(UserCreationRequest request) {
         try {
-        //kiểm tra user đã tồn tại ch = email
-        if (userRepository.existsByEmail(request.getEmail())){
-            User user_existing = userRepository.findByEmail(request.getEmail())
-                    .orElse(null);
+            //kiểm tra user đã tồn tại ch = email
+            if (userRepository.existsByEmail(request.getEmail())) {
+                User userExisting = userRepository.findByEmail(request.getEmail())
+                        .orElse(null);
 
-            //nếu user đã tồn tại nhưng chưa được confirm thì resend email
-            if (user_existing.getConfirmedAt() == null) {
-                String confirm_token = UUID.randomUUID().toString();
+                //nếu user đã tồn tại nhưng chưa được confirm thì resend email
+                if (userExisting.getConfirmedAt() == null) {
+                    String confirmToken = UUID.randomUUID().toString();
 
-                user_existing.setConfirmationToken(confirm_token);
-                user_existing.setConfirmationSentAt(LocalDateTime.now());
+                    userExisting.setConfirmationToken(confirmToken);
+                    userExisting.setConfirmationSentAt(LocalDateTime.now());
 
-                userRepository.save(user_existing);
+                    userRepository.save(userExisting);
 
-                sendEmail.sendEmailRegister(confirm_token,request.getEmail());
+                    sendEmail.sendEmailRegister(confirmToken, request.getEmail());
 
-                return ResponseEntity.ok()
+                    return ResponseEntity.ok()
+                            .body(
+                                    ApiResponse.<String>builder()
+                                            .message("Resend successfully!")
+                                            .build()
+                            );
+                }
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(
                                 ApiResponse.<String>builder()
-                                        .message("Resend successfully!")
+                                        .code(ErrorCode.USER_EXISTED.getCode())
+                                        .message(ErrorCode.USER_EXISTED.getMessage())
                                         .build()
                         );
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(
-                            ApiResponse.<String>builder()
-                                    .code(ErrorCode.USER_EXISTED.getCode())
-                                    .message(ErrorCode.USER_EXISTED.getMessage())
-                                    .build()
-                    );
-        }
-        String confirmToken = UUID.randomUUID().toString();
-        String jit = UUID.randomUUID().toString();
+            String confirmToken = UUID.randomUUID().toString();
+            String jit = UUID.randomUUID().toString();
 
-        //mã hóa mật khẩu
-        String password = passwordEncoder.encode(request.getEncryptedPassword());
+            //mã hóa mật khẩu
+            String password = passwordEncoder.encode(request.getEncryptedPassword());
 
-        User user = User.builder()
-                .email(request.getEmail())
-                .fullName(request.getFullName())
-                .jti(jit)
-                .encryptedPassword(password)
-                .confirmationToken(confirmToken)
-                .confirmationSentAt(LocalDateTime.now())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .role(Constants.Role.USER)
-                .phoneNumber(request.getPhoneNumber())
-                .dob(request.getDob())
-                .build();
+            User user = User.builder()
+                    .email(request.getEmail())
+                    .fullName(request.getFullName())
+                    .jti(jit)
+                    .encryptedPassword(password)
+                    .confirmationToken(confirmToken)
+                    .confirmationSentAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .role(Constants.Role.USER)
+                    .phoneNumber(request.getPhoneNumber())
+                    .dob(request.getDob())
+                    .build();
 
-        userRepository.save(user);
+            userRepository.save(user);
 
-        //method gửi email
-        sendEmail.sendEmailRegister(confirmToken,user.getEmail());
+            //method gửi email
+            sendEmail.sendEmailRegister(confirmToken, user.getEmail());
 
-        return ResponseEntity.ok(
-                ApiResponse.<String>builder()
-                        .message("Verification email sent. Please check your inbox.")
-                        .build()
-        );
+            return ResponseEntity.ok(
+                    ApiResponse.<String>builder()
+                            .message("Verification email sent. Please check your inbox.")
+                            .build()
+            );
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(
@@ -163,13 +163,13 @@ public class UserServiceImpl implements UserService {
             user.setUpdatedAt(LocalDateTime.now());
 
             //lưu thông tin thay đổi vào db
-            User saved_user = userRepository.save(user);
+            User savedUser = userRepository.save(user);
 
             return ResponseEntity.ok()
                     .body(
                             ApiResponse.<User>builder()
                                     .message("Update user successfully")
-                                    .result(saved_user)
+                                    .result(savedUser)
                                     .build()
                     );
         } catch (Exception e) {
@@ -185,23 +185,23 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<ApiResponse<?>> deleteUser(Long userId) {
         try {
-        if (!userRepository.existsById(userId)){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            if (!userRepository.existsById(userId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(
+                                ApiResponse.<User>builder()
+                                        .code(ErrorCode.USER_NOT_EXISTED.getCode())
+                                        .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                                        .build()
+                        );
+            }
+            userRepository.deleteById(userId);
+
+            return ResponseEntity.ok()
                     .body(
-                            ApiResponse.<User>builder()
-                                    .code(ErrorCode.USER_NOT_EXISTED.getCode())
-                                    .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                            ApiResponse.builder()
+                                    .message("Delete user successfully")
                                     .build()
                     );
-        }
-        userRepository.deleteById(userId);
-
-        return ResponseEntity.ok()
-                .body(
-                        ApiResponse.builder()
-                                .message("Delete user successfully")
-                                .build()
-                );
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(
@@ -216,29 +216,29 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public ResponseEntity<ApiResponse<String>> confirmUser(String token) {
         try {
-        User user = userRepository.findByConfirmationToken(token)
-                .orElse(null);
+            User user = userRepository.findByConfirmationToken(token)
+                    .orElse(null);
 
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.<String>builder()
-                            .code(ErrorCode.INVALID_TOKEN.getCode())
-                            .message("Failed")
-                            .build());
-        }
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.<String>builder()
+                                .code(ErrorCode.INVALID_TOKEN.getCode())
+                                .message("Failed")
+                                .build());
+            }
 
-        user.setCreatedAt(LocalDateTime.now());
-        user.setConfirmationToken(null);
-        user.setUpdatedAt(LocalDateTime.now());
-        user.setConfirmedAt(LocalDateTime.now());
+            user.setCreatedAt(LocalDateTime.now());
+            user.setConfirmationToken(null);
+            user.setUpdatedAt(LocalDateTime.now());
+            user.setConfirmedAt(LocalDateTime.now());
 
-        userRepository.save(user);
+            userRepository.save(user);
 
-        return ResponseEntity.ok(
-                ApiResponse.<String>builder()
-                        .message("Confirm successfully!")
-                        .build()
-        );
+            return ResponseEntity.ok(
+                    ApiResponse.<String>builder()
+                            .message("Confirm successfully!")
+                            .build()
+            );
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(
@@ -289,7 +289,7 @@ public class UserServiceImpl implements UserService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(
                             ApiResponse.<User>builder()
-                                    .message("Create user have error "+e.getMessage())
+                                    .message("Create user have error " + e.getMessage())
                                     .build()
                     );
         }
@@ -298,30 +298,29 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<ApiResponse<String>> lockUserAdminRole(Long userId) {
         try {
-        //Trường hợp userId không tồn tại
-        if (!userRepository.existsById(userId)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            //Trường hợp userId không tồn tại
+            if (!userRepository.existsById(userId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(
+                                ApiResponse.<String>builder()
+                                        .code(ErrorCode.USER_NOT_EXISTED.getCode())
+                                        .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                                        .build()
+                        );
+            }
+            User user = userRepository.findById(userId).get();
+
+            user.setLockedAt(LocalDateTime.now());
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok()
                     .body(
                             ApiResponse.<String>builder()
-                                    .code(ErrorCode.USER_NOT_EXISTED.getCode())
-                                    .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                                    .message("Locked user have id: " + userId)
                                     .build()
                     );
-        }
-        User user = userRepository.findById(userId).get();
-
-        user.setLockedAt(LocalDateTime.now());
-
-        userRepository.save(user);
-
-        return ResponseEntity.ok()
-                .body(
-                        ApiResponse.<String>builder()
-                                .message("Locked user have id: " + userId)
-                                .build()
-                );
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error(e.getMessage());
             {
                 return ResponseEntity.badRequest()
@@ -336,7 +335,7 @@ public class UserServiceImpl implements UserService {
     //lấy thoong tin user trong dashboard
     @Override
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(Long userId) {
-        if (!userRepository.existsById(userId)){
+        if (!userRepository.existsById(userId)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(
                             ApiResponse.<UserResponse>builder()

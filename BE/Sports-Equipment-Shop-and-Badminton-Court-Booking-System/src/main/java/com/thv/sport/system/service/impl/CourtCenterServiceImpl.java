@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -225,7 +226,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
 
         Set<Long> requestCourtIds = request.getCourts().stream()
                 .map(CourtRequest::getCourtId)
-                .filter(id -> id != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         for (Court existingCourt : existingCourts) {
@@ -390,7 +391,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
 
         Set<Long> requestRuleIds = request.getPricingRules().stream()
                 .map(PricingRuleRequest::getId)
-                .filter(id -> id != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         for (PricingRule existingRule : existingRules) {
@@ -449,7 +450,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
 
         Set<Long> requestImageIds = request.getImages().stream()
                 .map(CourtCenterImageRequest::getImageId)
-                .filter(id -> id != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         existingImages.removeIf(image ->
@@ -515,7 +516,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
                     if (ObjectUtils.isEmpty(image.getIsThumbnail())) {
                         continue;
                     }
-                    if(image.getIsThumbnail()) {
+                    if (image.getIsThumbnail()) {
                         thumbnailUrl = image.getImageUrl();
                     }
                 }

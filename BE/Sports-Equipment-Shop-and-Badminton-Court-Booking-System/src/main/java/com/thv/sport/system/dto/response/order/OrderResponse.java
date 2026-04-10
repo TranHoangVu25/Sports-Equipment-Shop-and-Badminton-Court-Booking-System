@@ -1,6 +1,5 @@
 package com.thv.sport.system.dto.response.order;
 
-import com.thv.sport.system.model.OrderItem;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

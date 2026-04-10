@@ -45,15 +45,15 @@ public class SearchController {
     @GetMapping()
     public ResponseEntity<?> searchProducts(
             @RequestParam(required = false) String name,
-            @RequestParam(value = "mainCategory",required = false) List<String> mainCategory,
-            @RequestParam(value = "subCategory",required = false) List<String> subCategory,
+            @RequestParam(value = "mainCategory", required = false) List<String> mainCategory,
+            @RequestParam(value = "subCategory", required = false) List<String> subCategory,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) List<String> sizes,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "productId") String sortBy, //tìm kiếm theo các field id,name.keyword,createdAt,status
+            @RequestParam(defaultValue = "productId") String sortBy, //tìm kiếm theo các field id,name.keyword,createdAt
             @RequestParam(defaultValue = "desc") String sortOrder //asc, desc
     ) {
         try {

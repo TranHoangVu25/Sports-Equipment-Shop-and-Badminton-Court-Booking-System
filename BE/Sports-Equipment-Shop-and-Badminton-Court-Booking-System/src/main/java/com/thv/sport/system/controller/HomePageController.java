@@ -21,13 +21,13 @@ import java.util.List;
 @RestController
 @RequestMapping(Constants.ApiPath.API_HOME)
 @Slf4j
-public class HomePageController extends BaseController{
+public class HomePageController extends BaseController {
     ProductService productService;
 
     @GetMapping("/home-products")
     public ResponseEntity<ApiResponse<List<ProductHomeResponse>>> getHomeProducts(
             @RequestParam("mainCategory") String mainCategory
-    ){
+    ) {
         return productService.getTop10ProductsByMainCategory(mainCategory);
     }
 }

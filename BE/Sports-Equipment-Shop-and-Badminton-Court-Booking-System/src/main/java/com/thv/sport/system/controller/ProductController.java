@@ -48,10 +48,12 @@ public class ProductController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "Create a single product with image",
-            description = "Creates a new product in the system along with its images. All images from the images list will be saved as the product's images.")
+            description = "Creates a new product in the system along with its images" +
+                    ". All images from the images list will be saved as the product's images.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Product created successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
+                    content = @Content(mediaType = "application/json"
+                            , schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input - validation failed"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
@@ -73,15 +75,18 @@ public class ProductController extends BaseController {
      */
     @PostMapping("/batch")
     @Operation(summary = "Create multiple products in batch",
-            description = "Creates multiple products in the system along with their images. All images from each product's images list will be saved. Returns detailed success/failure statistics.")
+            description = "Creates multiple products in the system along with their images" +
+                    ". All images from each product's images list will be saved." +
+                    " Returns detailed success/failure statistics.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Batch processing completed",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
+                    content = @Content(mediaType = "application/json"
+                            , schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input - validation failed"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<BaseResponse<BatchProductResponse>> createProductsBatch(
-             @RequestBody List<ProductCreateRequest> requests) {
+            @RequestBody List<ProductCreateRequest> requests) {
         try {
             BatchProductResponse response = productService.createProductsBatch(requests);
             return createdResponse(response, "SUCCESS.CREATE");
@@ -93,14 +98,15 @@ public class ProductController extends BaseController {
     /**
      * Get all products
      *
-     * @return ResponseEntity with BaseResponse<List<ProductResponse>> and HTTP 200 OK status
+     * @return ResponseEntity with {@code BaseResponse<List<ProductResponse>>} and HTTP 200 OK status
      */
     @GetMapping("/search")
     @Operation(summary = "Get all products",
             description = "Retrieves all products from the system with their images.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Products retrieved successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<BaseResponse<Page<Product>>> getAllProducts(
@@ -128,7 +134,8 @@ public class ProductController extends BaseController {
             description = "Retrieves a single product with its images by product ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product retrieved successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "404", description = "Product not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
@@ -148,7 +155,7 @@ public class ProductController extends BaseController {
     /**
      * Update product by ID
      *
-     * @param id the product ID
+     * @param id      the product ID
      * @param request ProductCreateRequest containing updated product details
      * @return ResponseEntity with BaseResponse<ProductResponse> and HTTP 200 OK status
      */
@@ -157,7 +164,8 @@ public class ProductController extends BaseController {
             description = "Updates an existing product with new details and images.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product updated successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
+                    content = @Content(mediaType = "application/json"
+                            , schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input - validation failed"),
             @ApiResponse(responseCode = "404", description = "Product not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -187,7 +195,8 @@ public class ProductController extends BaseController {
             description = "Deletes a product and all its associated images.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product deleted successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "404", description = "Product not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
@@ -212,10 +221,12 @@ public class ProductController extends BaseController {
      */
     @DeleteMapping("/batch")
     @Operation(summary = "Delete multiple products in batch",
-            description = "Deletes multiple products and their associated images. Returns detailed success/failure statistics.")
+            description = "Deletes multiple products and their associated images" +
+                    ". Returns detailed success/failure statistics.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Batch deletion completed",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponse.class))),
+                    content = @Content(mediaType = "application/json"
+                            , schema = @Schema(implementation = BaseResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })

@@ -46,7 +46,7 @@ public class OrderController {
             @RequestParam(defaultValue = "6") int size
     ) {
         Long userId = Long.valueOf(user.getUserId());
-        return orderService.getAllOrders(userId, page,size);
+        return orderService.getAllOrders(userId, page, size);
     }
 
     @PostMapping("/checkout-stripe-url")

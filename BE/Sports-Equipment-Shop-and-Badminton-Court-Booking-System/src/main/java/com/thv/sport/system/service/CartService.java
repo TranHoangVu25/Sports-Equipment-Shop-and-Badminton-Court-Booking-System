@@ -31,7 +31,7 @@ public interface CartService {
 
     Cart findByUserIdToCreate(Integer userId);
 
-    ApiResponse<String> checkout(Integer userId,String jwtToken);
+    ApiResponse<String> checkout(Integer userId, String jwtToken);
 
     ResponseEntity<ApiResponse<Cart>> addToCart(Integer userId, CartItemRequest request);
 }

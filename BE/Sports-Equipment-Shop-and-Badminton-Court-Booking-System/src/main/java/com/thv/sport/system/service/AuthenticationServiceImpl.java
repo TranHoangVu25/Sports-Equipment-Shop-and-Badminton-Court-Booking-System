@@ -1,7 +1,12 @@
 package com.thv.sport.system.service;
 
 
-import com.nimbusds.jose.*;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -55,15 +60,15 @@ public class AuthenticationServiceImpl {
     @NonFinal //không bị inject contructor
     @Value("${jwt.signerKey}") //anotation này được sử dụng để đọc biến trong file .yaml
     //https://generate-random.org/
-    protected String SIGN_KEY;
+    protected String signKey;
 
     @NonFinal
     @Value("${jwt.valid-duration}")
-    protected Long VALID_DURATION;
+    protected Long validDuration;
 
     @NonFinal
     @Value("${jwt.refreshable-duration}")
-    protected Long REFRESHABLE_DURATION;
+    protected Long refreshableDuration;
 
     GenerateRandomPassword generateRandomPassword;
 
@@ -88,14 +93,14 @@ public class AuthenticationServiceImpl {
             var user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new Exception(ErrorCode.USER_NOT_EXISTED.getMessage()));
 
-            log.info("User confirmed:"+user.getConfirmedAt());
+            log.info("User confirmed:" + user.getConfirmedAt());
 
             //nếu tài khoản chưa được confirm hoặc đã bị khóa thì k truy cập được
             if (user.getConfirmedAt() == null) {
 //            log.error("Error not confirm email: "+ErrorCode.EMAIL_NOT_CONFIRMED.getMessage());
                 throw new RuntimeException(new Exception(ErrorCode.EMAIL_NOT_CONFIRMED.getMessage()));
             }
-            if (user.getLockedAt() !=null) {
+            if (user.getLockedAt() != null) {
 //                log.error("Error not confirm email: "+ErrorCode.ACCOUNT_WAS_LOCKED.getMessage());
                 throw new RuntimeException(new Exception(ErrorCode.ACCOUNT_WAS_LOCKED.getMessage()));
             }
@@ -120,7 +125,7 @@ public class AuthenticationServiceImpl {
 
             AuthenticationResponse authenticationResponse = new AuthenticationResponse(token, authenticated);
 
-            if(!authenticationResponse.isAuthenticated()){
+            if (!authenticationResponse.isAuthenticated()) {
                 throw new RuntimeException(new Exception(ErrorCode.ACCOUNT_PASSWORD_NOT_CORRECT.getMessage()));
             }
             return ResponseEntity.ok()
@@ -131,12 +136,12 @@ public class AuthenticationServiceImpl {
                                     .build()
                     );
 
-        }catch (Exception e){
-            log.error("Authentication Exception"+e.getMessage());
+        } catch (Exception e) {
+            log.error("Authentication Exception{}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(
                             ApiResponse.<AuthenticationResponse>builder()
-                                    .message("Authentication Exception"+e.getMessage())
+                                    .message("Authentication Exception" + e.getMessage())
                                     .build()
                     );
         }
@@ -144,15 +149,15 @@ public class AuthenticationServiceImpl {
 
     private SignedJWT verifyToken(String token, boolean isRefresh) throws Exception {
         //Tạo đối tượng để xác minh chữ ký JWT bằng khóa bí mật SIGN_KEY
-        JWSVerifier verifier = new MACVerifier(SIGN_KEY.getBytes());
+        JWSVerifier verifier = new MACVerifier(signKey.getBytes());
 
         //Phân tích chuỗi token thành đối tượng SignedJWT để truy xuất header, payload và chữ ký
         SignedJWT signedJWT = SignedJWT.parse(token);
 
         // lấy ngày hết hạn của token
         Date expiryTime = (isRefresh) ?
-                new Date(signedJWT.getJWTClaimsSet().getIssueTime()
-                        .toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
+                new Date(signedJWT.getJWTClaimsSet().getIssueTime().toInstant()
+                        .plus(refreshableDuration, ChronoUnit.SECONDS).toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
 
         //kiểm tra token hợp lệ
@@ -180,14 +185,11 @@ public class AuthenticationServiceImpl {
                 .subject(user.getEmail())
                 .issuer("THV.com")
                 .issueTime(new Date())
-                .expirationTime(new Date(
-                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()
+                .expirationTime(new Date(Instant.now().plus(validDuration, ChronoUnit.SECONDS).toEpochMilli()
                 ))
 
-                .claim("scope", buildScope(user))
-                .claim("role",buildScope(user))
-                .claim("userId", user.getUserId())
-                .claim("full_name",user.getFullName())
+                .claim("scope", buildScope(user)).claim("role", buildScope(user))
+                .claim("userId", user.getUserId()).claim("full_name", user.getFullName())
                 //#16 thêm vào ID của jwt để lưu trữ token gần nhất mới hết hạn trong db
                 .jwtID(UUID.randomUUID().toString())
                 .build();
@@ -196,7 +198,7 @@ public class AuthenticationServiceImpl {
 
         JWSObject jwsObject = new JWSObject(header, payload);
         try {
-            jwsObject.sign(new MACSigner(SIGN_KEY.getBytes()));
+            jwsObject.sign(new MACSigner(signKey.getBytes()));
 
             return jwsObject.serialize();
         } catch (JOSEException e) {
@@ -215,14 +217,15 @@ public class AuthenticationServiceImpl {
         return stringJoiner.toString();
     }
 
-    public boolean checkPassword(String rawPassword,String hashPassword){
+    public boolean checkPassword(String rawPassword, String hashPassword) {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        return passwordEncoder.matches(rawPassword,hashPassword);
+        return passwordEncoder.matches(rawPassword, hashPassword);
     }
 
+    @SuppressWarnings("checkstyle:LocalVariableName")
     public ResponseEntity<ApiResponse<String>> forgotPassWord(ForgotPasswordDTO forgotPasswordDTO) {
         try {
-            if(!userRepository.existsByEmail(forgotPasswordDTO.getEmail())) {
+            if (!userRepository.existsByEmail(forgotPasswordDTO.getEmail())) {
                 return ResponseEntity.badRequest()
                         .body(
                                 ApiResponse.<String>builder()
@@ -233,10 +236,10 @@ public class AuthenticationServiceImpl {
             }
 
             User user = userRepository.findByEmail(forgotPasswordDTO.getEmail())
-                    .orElseThrow(()->new RuntimeException(ErrorCode.USER_NOT_EXISTED.getMessage()));
+                    .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_EXISTED.getMessage()));
 
             //nếu user đăng ký mà chưa xác nhận email thì k dùng chức năng quên password được
-            if (user.getConfirmedAt()==null){
+            if (user.getConfirmedAt() == null) {
                 return ResponseEntity.badRequest()
                         .body(
                                 ApiResponse.<String>builder()
@@ -246,14 +249,14 @@ public class AuthenticationServiceImpl {
                         );
             }
             //tạo confirm token
-            String forgot_token = UUID.randomUUID().toString();
-            user.setConfirmForgot(forgot_token);
+            String forgotToken = UUID.randomUUID().toString();
+            user.setConfirmForgot(forgotToken);
             //set expire time
             user.setConfirmForgotExpired(LocalDateTime.now().plusMinutes(15));
             userRepository.save(user);
 
             //gọi method gửi email
-            sendEmail.sendEmailForgotPassword(forgot_token,user.getEmail());
+            sendEmail.sendEmailForgotPassword(forgotToken, user.getEmail());
 
             return ResponseEntity.ok()
                     .body(
@@ -262,15 +265,15 @@ public class AuthenticationServiceImpl {
                                     .build()
                     );
         } catch (RuntimeException e) {
-            log.error("Forgot Password Error",e);
+            log.error("Forgot Password Error", e);
             throw new RuntimeException(e);
         }
     }
 
     //kiểm tra token trong mail có hợp lệ k
-    public ResponseEntity<ApiResponse<String>> confirm_password_reset(String forgot_token) {
+    public ResponseEntity<ApiResponse<String>> confirmPasswordReset(String forgotToken) {
         try {
-            if(!userRepository.existsByConfirmForgot(forgot_token)) {
+            if (!userRepository.existsByConfirmForgot(forgotToken)) {
                 return ResponseEntity.badRequest()
                         .body(
                                 ApiResponse.<String>builder()
@@ -285,7 +288,7 @@ public class AuthenticationServiceImpl {
                             .build()
             );
         } catch (RuntimeException e) {
-            log.error("Forgot Password Error",e);
+            log.error("Forgot Password Error", e);
             return ResponseEntity.badRequest()
                     .body(
                             ApiResponse.<String>builder()
@@ -296,13 +299,14 @@ public class AuthenticationServiceImpl {
     }
 
     // đổi mật khẩu khi quên mật khẩu
-    public ResponseEntity<ApiResponse<User>> changePasswordFormForgot(String token, ChangePasswordInForgotRequest request){
-        try{
+    public ResponseEntity<ApiResponse<User>> changePasswordFormForgot
+    (String token, ChangePasswordInForgotRequest request) {
+        try {
             User user = userRepository.findByConfirmForgot(token)
-                    .orElseThrow(()->new RuntimeException(ErrorCode.INVALID_TOKEN.getMessage()));
+                    .orElseThrow(() -> new RuntimeException(ErrorCode.INVALID_TOKEN.getMessage()));
 
             //nếu user không tồn tại hoặc thời gian xác nhận hết hạn
-            if(!userRepository.existsByConfirmForgot(token)
+            if (!userRepository.existsByConfirmForgot(token)
                     || user.getConfirmForgotExpired().isBefore(LocalDateTime.now())) {
                 return ResponseEntity.badRequest()
                         .body(
@@ -331,9 +335,9 @@ public class AuthenticationServiceImpl {
 //                                        .build()
 //                        );
 //            }
-            String new_password = passwordEncoder.encode(request.getNewPassword());
+            String newPassword = passwordEncoder.encode(request.getNewPassword());
 
-            user.setEncryptedPassword(new_password);
+            user.setEncryptedPassword(newPassword);
             User savedUser = userRepository.save(user);
             return ResponseEntity.ok()
                     .body(
@@ -351,10 +355,10 @@ public class AuthenticationServiceImpl {
     }
 
     //đổi mk trong user setting
-    public ResponseEntity<ApiResponse<String>> changePassword(Long userId, ChangePasswordRequest request){
-        try{
+    public ResponseEntity<ApiResponse<String>> changePassword(Long userId, ChangePasswordRequest request) {
+        try {
             //nếu user không tồn tại hoặc thời gian xác nhận hết hạn
-            if(!userRepository.existsById(userId)) {
+            if (!userRepository.existsById(userId)) {
                 return ResponseEntity.badRequest()
                         .body(
                                 ApiResponse.<String>builder()
@@ -371,7 +375,7 @@ public class AuthenticationServiceImpl {
             //so sánh mật khẩu mã hóa và mật khẩu trong db
             boolean authenticated = passwordEncoder.matches(rawPassword, user.getEncryptedPassword());
 
-            log.info("AUTHENTICATE:==="+authenticated);
+            log.info("AUTHENTICATE:===" + authenticated);
 
             //nếu old password khác password trong db
             if (!authenticated) {
@@ -383,9 +387,9 @@ public class AuthenticationServiceImpl {
                                         .build()
                         );
             }
-            String new_password = passwordEncoder.encode(request.getNewPassword());
+            String newPassword = passwordEncoder.encode(request.getNewPassword());
 
-            user.setEncryptedPassword(new_password);
+            user.setEncryptedPassword(newPassword);
             userRepository.save(user);
             return ResponseEntity.ok()
                     .body(
@@ -396,7 +400,7 @@ public class AuthenticationServiceImpl {
             return ResponseEntity.badRequest()
                     .body(
                             ApiResponse.<String>builder()
-                                    .message("Have error"+e.getMessage())
+                                    .message("Have error" + e.getMessage())
                                     .build());
         }
     }

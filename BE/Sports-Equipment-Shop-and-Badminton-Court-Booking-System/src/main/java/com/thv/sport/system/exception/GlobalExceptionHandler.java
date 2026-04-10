@@ -1,8 +1,6 @@
 package com.thv.sport.system.exception;
 
 import com.thv.sport.system.dto.response.ApiResponse;
-import com.thv.sport.system.exception.ErrorCode;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;

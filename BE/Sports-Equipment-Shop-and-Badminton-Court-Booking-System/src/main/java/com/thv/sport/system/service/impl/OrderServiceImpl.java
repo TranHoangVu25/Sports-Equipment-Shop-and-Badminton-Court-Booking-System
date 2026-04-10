@@ -43,14 +43,14 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderServiceImpl implements OrderService {
     CartRepository cartRepository;
     OrderRepository orderRepository;
     UserRepository userRepository;
     PaymentRepository paymentRepository;
     CartItemRepository cartItemRepository;
-    ProductRepository  productRepository;
+    ProductRepository productRepository;
 
     @Override
     @Transactional
@@ -63,10 +63,9 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Cart is empty");
         }
         String checkoutType;
-        if(request.getCheckoutType()){
+        if (request.getCheckoutType()) {
             checkoutType = Constants.CheckoutMethod.COD;
-        }
-        else {
+        } else {
             checkoutType = Constants.CheckoutMethod.STRIPE;
         }
         User u = new User();
@@ -192,7 +191,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     public ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId, Long userId) {
-        List<OrderItemResponse>  orderItemResponseList = new ArrayList<>();
+        List<OrderItemResponse> orderItemResponseList = new ArrayList<>();
 
         Order order = orderRepository
                 .findOrderByOrderIdAndUserId(orderId, userId)
@@ -207,7 +206,7 @@ public class OrderServiceImpl implements OrderService {
         Map<Long, Product> productMap = productList.stream()
                 .collect(Collectors.toMap(
                         Product::getProductId,
-                        product ->product
+                        product -> product
                 ));
 
 

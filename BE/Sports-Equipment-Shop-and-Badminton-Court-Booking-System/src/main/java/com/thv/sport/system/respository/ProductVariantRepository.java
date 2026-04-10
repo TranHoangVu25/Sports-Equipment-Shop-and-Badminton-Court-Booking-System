@@ -1,6 +1,5 @@
 package com.thv.sport.system.respository;
 
-import com.thv.sport.system.model.Product;
 import com.thv.sport.system.model.ProductVariant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

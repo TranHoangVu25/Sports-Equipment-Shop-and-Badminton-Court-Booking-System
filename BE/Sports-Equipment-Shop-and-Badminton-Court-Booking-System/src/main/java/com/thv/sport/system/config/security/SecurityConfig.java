@@ -21,7 +21,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {
+    private final String[] publicEndpoints = {
             "/register",
             "/forgot-password",
             "/auth/**",
@@ -44,7 +44,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(publicEndpoints).permitAll()
                         .requestMatchers("/auth/logout").permitAll()
                         .anyRequest().authenticated()
                 )

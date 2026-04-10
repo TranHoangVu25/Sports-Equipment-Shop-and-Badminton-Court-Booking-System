@@ -13,7 +13,6 @@ import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
-import com.thv.sport.system.dto.CountItemDTO;
 import com.thv.sport.system.dto.SearchResultDTO;
 import com.thv.sport.system.dto.response.product.ProductDocument;
 import com.thv.sport.system.mapper.ProductSearchMapper;

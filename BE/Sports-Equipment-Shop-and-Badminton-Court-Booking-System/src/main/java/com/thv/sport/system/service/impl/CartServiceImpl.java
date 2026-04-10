@@ -2,8 +2,8 @@ package com.thv.sport.system.service.impl;
 
 import com.thv.sport.system.dto.request.cart.CartItemRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
-import com.thv.sport.system.dto.response.cart.CartResponse;
 import com.thv.sport.system.dto.response.cart.CartItemResponse;
+import com.thv.sport.system.dto.response.cart.CartResponse;
 import com.thv.sport.system.exception.ErrorCode;
 import com.thv.sport.system.model.Cart;
 import com.thv.sport.system.model.CartItem;
@@ -285,7 +285,7 @@ public class CartServiceImpl implements CartService {
                 .collect(Collectors.toMap(ProductVariant::getSku, Function.identity()));
         ProductVariant productVariant = variantMap.get(request.getSku());
 
-        if(ObjectUtils.isEmpty(productVariant)) {
+        if (ObjectUtils.isEmpty(productVariant)) {
             throw new RuntimeException("Product not available");
         }
 

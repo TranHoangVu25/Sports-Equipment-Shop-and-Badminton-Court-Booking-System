@@ -195,6 +195,7 @@ public class Constants {
         public static final Boolean TRUE_VALUE = Boolean.TRUE;
         public static final Boolean FALSE_VALUE = Boolean.FALSE;
     }
+
     //NORMAL → giá bình thường
     //PEAK → giờ cao điểm (18h–22h)
     //HOLIDAY → ngày lễ

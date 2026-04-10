@@ -13,7 +13,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CartItemRequest {
     String id;
-    @Min(value = 1,message = "INVALID_QUANTITY")
+    @Min(value = 1, message = "INVALID_QUANTITY")
     int quantity;
     boolean plus; // true: +1 , false: -1
     String sku;
