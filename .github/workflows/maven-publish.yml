@@ -1,0 +1,30 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build + Test
+        run: mvn clean verify
+
+      - name: SonarCloud Scan
+        run: mvn sonar:sonar \
+          -Dsonar.projectKey=Tran Hoang Vu \
+          -Dsonar.organization=tranhoangvu25 \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ 10778e0465c2f396cd836c25d5055d32631ff6c4 }}
