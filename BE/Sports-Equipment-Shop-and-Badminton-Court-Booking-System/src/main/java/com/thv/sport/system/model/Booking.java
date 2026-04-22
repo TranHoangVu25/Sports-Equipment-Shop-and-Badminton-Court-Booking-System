@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -29,7 +30,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-
+@Builder
 public class Booking {
 
     @Id
@@ -49,9 +50,15 @@ public class Booking {
     @Column(name = "status")
     private String status; // PENDING, PAID, CANCELLED
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "recipient", nullable = false)
+    private String recipient;
+
+    @Column(name = "phone_number", nullable = false)
+    private String phoneNumber;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
-    private List<BookingDetail> details;
+    private List<BookingItem> details;
 }
