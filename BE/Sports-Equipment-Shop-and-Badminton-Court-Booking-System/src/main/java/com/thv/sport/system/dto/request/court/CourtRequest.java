@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,4 +20,6 @@ public class CourtRequest {
     private String name;
     private String type;
     private String status;
+    LocalTime startTime;
+    LocalTime endTime;
 }
