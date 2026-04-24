@@ -83,14 +83,14 @@ public class ProductSearchServiceImpl implements ProductSearchService {
         int from = (page - 1) * limit;
 
         // ===== MUST =====
-        List<Query> mustQueries = new ArrayList<>();
+        Query byNameQuery = null;
 
         if (name != null && !name.isEmpty()) {
-            mustQueries.add(MatchQuery.of(m -> m
+            byNameQuery = MatchQuery.of(m -> m
                     .field("name")
                     .query(name)
                     .fuzziness("2")
-            )._toQuery());
+            )._toQuery();
         }
 
         // ===== FILTER =====
@@ -159,7 +159,7 @@ public class ProductSearchServiceImpl implements ProductSearchService {
         // ===== BUILD BOOL =====
         BoolQuery.Builder bool = new BoolQuery.Builder();
 
-        if (!mustQueries.isEmpty()) bool.must(mustQueries);
+        if (byNameQuery != null) bool.must(byNameQuery);
         if (!filters.isEmpty()) bool.filter(filters);
 
         Query finalQuery = bool.build()._toQuery();
@@ -167,7 +167,12 @@ public class ProductSearchServiceImpl implements ProductSearchService {
         // ===== SORT =====
         List<SortOptions> sortOptions = new ArrayList<>();
 
-        if (sortBy != null && !sortBy.isEmpty()) {
+        if (name != null && !name.isEmpty()) {
+            // Có search name → ưu tiên relevance
+            sortOptions.add(SortOptions.of(s -> s
+                    .score(sc -> sc.order(SortOrder.Desc))
+            ));
+        } else if (sortBy != null && !sortBy.isEmpty()) {
             sortOptions.add(SortOptions.of(s -> s
                     .field(f -> f
                             .field(sortBy)

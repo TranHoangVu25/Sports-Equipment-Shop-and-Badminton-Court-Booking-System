@@ -47,8 +47,8 @@ public class MomoCheckoutServiceImpl implements MomoCheckoutService {
 
     private final MomoConfig momoConfig;
     private final ObjectMapper objectMapper;
-    BookingRepository bookingRepository;
-    BookingPaymentRepository bookingPaymentRepository;
+    private final BookingRepository bookingRepository;
+    private final BookingPaymentRepository bookingPaymentRepository;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
