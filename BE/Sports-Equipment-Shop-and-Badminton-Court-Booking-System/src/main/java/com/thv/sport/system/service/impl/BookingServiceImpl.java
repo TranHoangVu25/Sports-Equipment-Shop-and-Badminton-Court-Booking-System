@@ -1,5 +1,6 @@
 package com.thv.sport.system.service.impl;
 
+import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.dto.request.booking.BookingItemRequest;
 import com.thv.sport.system.dto.request.booking.BookingRequest;
 import com.thv.sport.system.dto.response.booking.BookingResponse;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -48,8 +50,34 @@ public class BookingServiceImpl implements BookingService {
     private final MomoCheckoutService momoCheckoutService;
 
     @Override
-    public List<BookingResponse> getBookingList() {
-        return List.of();
+    public List<BookingResponse> getBookingList(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("user.not.found"));
+
+        List<BookingResponse> responseList = new ArrayList<>();
+
+        List<Booking> bookingList = bookingRepository.findAllBookingByUserId(user.getUserId());
+
+        for (Booking booking : bookingList) {
+            BookingResponse response = BookingResponse.builder()
+                    .bookingId(booking.getBookingId())
+                    .userId(user.getUserId())
+                    .userName(user.getFullName())
+                    .bookingDate(booking.getBookingDate())
+                    .totalAmount(booking.getTotalAmount())
+                    .status(booking.getStatus())
+                    .bookingItems(booking.getBookingItems())
+//                    .courtCenter(booking.getBookingItems().getFirst().getCourt().getCourtCenter())
+                    .courtCenterName(booking.getBookingItems().getFirst().getCourt().getCourtCenter().getName())
+                    .courtCenterAddress(booking.getBookingItems().getFirst().getCourt().getCourtCenter()
+                            .getLocationDetail())
+                    .courtCenterPhoneNumber(booking.getBookingItems().getFirst().getCourt().getCourtCenter()
+                            .getPhoneNumber())
+                    .build();
+
+            responseList.add(response);
+        }
+        return responseList;
     }
 
     @Transactional
@@ -58,7 +86,7 @@ public class BookingServiceImpl implements BookingService {
         try {
 
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("user.not.found"));
 
             LocalDateTime now = LocalDateTime.now();
 
@@ -73,7 +101,7 @@ public class BookingServiceImpl implements BookingService {
             List<Court> courts = courtRepository.findCourtByCourtId(courtIds);
 
             if (courts.size() != courtIds.size()) {
-                throw new RuntimeException("Some courts not found");
+                throw new RuntimeException("court.not.found");
             }
 
             Map<Long, Court> courtMap = courts.stream()
@@ -99,7 +127,7 @@ public class BookingServiceImpl implements BookingService {
             // 3. BATCH CHECK CONFLICT
             // =========================
             // (giả sử tất cả request cùng 1 ngày, nếu không thì group theo date)
-            LocalDate bookingDate = request.getItems().get(0).getBookingDate();
+            LocalDate bookingDate = request.getItems().getFirst().getBookingDate();
 
             LocalTime minStart = request.getItems().stream()
                     .map(BookingItemRequest::getStartTime)
@@ -128,7 +156,7 @@ public class BookingServiceImpl implements BookingService {
             // =========================
             Booking booking = new Booking();
             booking.setUser(user);
-            booking.setStatus("PENDING");
+            booking.setStatus(Constants.PaymentStatus.PENDING);
             booking.setRecipient(request.getRecipient());
             booking.setPhoneNumber(request.getPhoneNumber());
             booking.setBookingDate(bookingDate);
@@ -152,7 +180,7 @@ public class BookingServiceImpl implements BookingService {
                         if (!(req.getEndTime().isBefore(booked.getStartTime()) ||
                                 req.getStartTime().isAfter(booked.getEndTime()))) {
 
-                            throw new RuntimeException("Slot already booked");
+                            throw new RuntimeException("court.was.booked");
                         }
                     }
                 }
@@ -162,7 +190,7 @@ public class BookingServiceImpl implements BookingService {
                 List<PricingRule> centerRules = pricingMap.get(centerId);
 
                 if (centerRules == null || centerRules.isEmpty()) {
-                    throw new RuntimeException("No pricing rule");
+                    throw new RuntimeException("pricing.rule.not.existed");
                 }
 
                 BigDecimal itemTotal = calculatePrice(
@@ -185,7 +213,7 @@ public class BookingServiceImpl implements BookingService {
                 items.add(item);
             }
 
-            booking.setDetails(items);
+            booking.setBookingItems(items);
             booking.setTotalAmount(totalAmount);
 
             Booking savedBooking = bookingRepository.save(booking);
@@ -196,9 +224,9 @@ public class BookingServiceImpl implements BookingService {
             BookingPayment payment = BookingPayment.builder()
                     .booking(savedBooking)
                     .amount(totalAmount)
-                    .currency("VND")
-                    .paymentMethod("MOMO")
-                    .status("PENDING")
+                    .currency(Constants.Currency.VND)
+                    .paymentMethod(Constants.CheckoutMethod.MOMO)
+                    .status(Constants.PaymentStatus.PENDING)
                     .createdAt(now)
                     .build();
 
@@ -215,8 +243,31 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponse getBookingDetail(Long bookingId) {
-        return null;
+    public BookingResponse getBookingDetail(Long bookingId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("user.not.found"));
+
+        Booking booking = bookingRepository.findBookingDetailByUserIdAndBookingId(user.getUserId(), bookingId);
+
+        if (ObjectUtils.isEmpty(booking)) {
+            throw new RuntimeException("booking.not.found");
+        }
+
+        return BookingResponse.builder()
+                .bookingId(booking.getBookingId())
+                .userId(user.getUserId())
+                .userName(user.getFullName())
+                .bookingDate(booking.getBookingDate())
+                .totalAmount(booking.getTotalAmount())
+                .status(booking.getStatus())
+                .bookingItems(booking.getBookingItems())
+//                    .courtCenter(booking.getBookingItems().getFirst().getCourt().getCourtCenter())
+                .courtCenterName(booking.getBookingItems().getFirst().getCourt().getCourtCenter().getName())
+                .courtCenterAddress(booking.getBookingItems().getFirst().getCourt().getCourtCenter()
+                        .getLocationDetail())
+                .courtCenterPhoneNumber(booking.getBookingItems().getFirst().getCourt().getCourtCenter()
+                        .getPhoneNumber())
+                .build();
     }
 
     public BigDecimal calculatePrice(

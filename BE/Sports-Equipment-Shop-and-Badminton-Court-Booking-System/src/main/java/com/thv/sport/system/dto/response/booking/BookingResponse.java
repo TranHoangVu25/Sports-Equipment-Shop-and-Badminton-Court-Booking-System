@@ -1,5 +1,7 @@
 package com.thv.sport.system.dto.response.booking;
 
+import com.thv.sport.system.model.BookingItem;
+import com.thv.sport.system.model.CourtCenter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,7 +33,13 @@ public class BookingResponse {
 
     private LocalDateTime createdAt;
 
-    private List<BookingItemResponse> details;
+    private List<BookingItem> bookingItems;
 
-    private List<BookingPaymentResponse> payments;
+    private CourtCenter courtCenter;
+
+    private String courtCenterName;
+
+    private String courtCenterAddress;
+
+    private String courtCenterPhoneNumber;
 }
