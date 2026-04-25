@@ -1,5 +1,8 @@
 package com.thv.sport.system.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -34,10 +37,13 @@ public class BookingItem {
     // FK tới booking
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false)
+//    @JsonIgnore
+    @JsonBackReference
     private Booking booking;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "court_id", nullable = false)
+//    @JsonBackReference
     private Court court;
 
     // ngày cụ thể
@@ -57,5 +63,10 @@ public class BookingItem {
 
     @Column(name = "total_price", precision = 10, scale = 2)
     private BigDecimal totalPrice;
+
+//    @JsonProperty("courtId")
+//    public Long getCourtId() {
+//        return court != null ? court.getCourtId() : null;
+//    }
 }
 

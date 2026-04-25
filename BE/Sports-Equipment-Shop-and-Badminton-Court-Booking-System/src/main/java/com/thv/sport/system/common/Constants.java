@@ -166,6 +166,8 @@ public class Constants {
     public static class CheckoutMethod {
         public static final String COD = "COD";
         public static final String STRIPE = "STRIPE";
+        public static final String MOMO = "MOMO";
+
     }
 
     public static class Role {

@@ -1,6 +1,8 @@
 package com.thv.sport.system.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,6 +41,7 @@ public class Booking {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
     private User user;
 
     @Column(name = "booking_date", nullable = false)
@@ -60,5 +63,6 @@ public class Booking {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
-    private List<BookingItem> details;
+    @JsonManagedReference
+    private List<BookingItem> bookingItems;
 }
