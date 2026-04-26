@@ -53,6 +53,9 @@ public class User {
     @Column(name = "locked_at")
     private LocalDateTime lockedAt;
 
+    @Column(name = "is_locked")
+    private boolean isLocked;
+
     @Column(name = "dob")
     private String dob;
 

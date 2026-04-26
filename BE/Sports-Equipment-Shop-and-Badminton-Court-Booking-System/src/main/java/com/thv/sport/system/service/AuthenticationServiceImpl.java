@@ -100,8 +100,8 @@ public class AuthenticationServiceImpl {
 //            log.error("Error not confirm email: "+ErrorCode.EMAIL_NOT_CONFIRMED.getMessage());
                 throw new RuntimeException(new Exception(ErrorCode.EMAIL_NOT_CONFIRMED.getMessage()));
             }
-            if (user.getLockedAt() != null) {
-//                log.error("Error not confirm email: "+ErrorCode.ACCOUNT_WAS_LOCKED.getMessage());
+            // check boolean flag isLocked instead of lockedAt
+            if (user.isLocked()) {
                 throw new RuntimeException(new Exception(ErrorCode.ACCOUNT_WAS_LOCKED.getMessage()));
             }
             //mã hóa mật khẩu user nhập
@@ -137,6 +137,7 @@ public class AuthenticationServiceImpl {
                     );
 
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Authentication Exception{}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(

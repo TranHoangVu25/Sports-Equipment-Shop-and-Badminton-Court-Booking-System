@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @RestController
@@ -125,6 +126,10 @@ public class AuthenticationController {
                     .role(role)
                     .build();
 
+            LocalDateTime time = LocalDateTime.now();
+            u.setLastSignInAt(time);
+            userRepository.save(u);
+
             return ResponseEntity.ok()
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
                     .body(
@@ -134,6 +139,7 @@ public class AuthenticationController {
                                     .build()
                     );
         } catch (Exception e) {
+            e.printStackTrace();
             log.error(e.getMessage());
             return ResponseEntity.badRequest()
                     .body(

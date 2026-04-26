@@ -216,5 +216,10 @@ public class Constants {
         public static final LocalTime START_TIME = LocalTime.of(5, 0);
         public static final LocalTime END_TIME = LocalTime.of(23, 59);
     }
+
+    public static class TrueFalseValue {
+        public static final java.lang.Boolean TRUE = Boolean.TRUE;
+        public static final java.lang.Boolean FALSE = Boolean.FALSE;
+    }
 }
 

@@ -7,6 +7,7 @@ import com.thv.sport.system.dto.request.user.UserCreationRequest;
 import com.thv.sport.system.dto.request.user.UserUpdateRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.user.UserResponse;
+import com.thv.sport.system.dto.response.user.UserStatsResponse;
 import com.thv.sport.system.model.User;
 import com.thv.sport.system.service.AuthenticationServiceImpl;
 import com.thv.sport.system.service.UserService;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -46,8 +48,10 @@ public class UserController {
 
     //xem tất cả các user để test
     @GetMapping()
-    public ResponseEntity<ApiResponse<List<User>>> getAllUser() {
-        return userService.getAllUser();
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUser(
+            @RequestParam(name = "userName", required = false) String userName
+    ) {
+        return userService.getAllUser(userName);
     }
 
     @PutMapping("/{userId}")
@@ -70,6 +74,13 @@ public class UserController {
             @PathVariable Long userId
     ) {
         return userService.lockUserAdminRole(userId);
+    }
+
+    @PostMapping("/unlock/{userId}")
+    public ResponseEntity<ApiResponse<String>> unlockUser(
+            @PathVariable Long userId
+    ) {
+        return userService.unlockUserAdminRole(userId);
     }
 
     @PostMapping("/create-user")
@@ -110,5 +121,19 @@ public class UserController {
     ) {
         Integer userId = user.getUserId();
         return userService.changeProfile(request, Long.valueOf(userId));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<UserStatsResponse>> getUserStats(
+            @RequestParam(name = "days", required = false, defaultValue = "2") int days
+    ) {
+        return userService.getUserStats(days);
+    }
+
+    @GetMapping("/detail/{userId}")
+    public ResponseEntity<ApiResponse<com.thv.sport.system.dto.response.user.UserDetailResponse>> getUserDetail(
+            @PathVariable Long userId
+    ) {
+        return userService.getUserDetail(userId);
     }
 }
