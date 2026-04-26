@@ -21,6 +21,7 @@ public class UserResponse {
     String role;
     String lineUserId;
     LocalDateTime lockedAt;
+    Boolean isLocked;
     LocalDateTime createdAt;
     LocalDateTime lastSignInAt;
     private String location;

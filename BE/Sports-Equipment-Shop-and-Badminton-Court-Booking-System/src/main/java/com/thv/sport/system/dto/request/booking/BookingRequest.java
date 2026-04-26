@@ -1,6 +1,5 @@
 package com.thv.sport.system.dto.request.booking;
 
-import com.thv.sport.system.dto.request.court.CourtRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

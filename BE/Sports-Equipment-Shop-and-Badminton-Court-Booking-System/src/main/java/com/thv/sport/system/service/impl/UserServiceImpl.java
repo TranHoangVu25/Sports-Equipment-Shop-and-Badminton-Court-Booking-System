@@ -6,6 +6,7 @@ import com.thv.sport.system.dto.request.user.UserCreationRequest;
 import com.thv.sport.system.dto.request.user.UserUpdateRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.user.UserResponse;
+import com.thv.sport.system.dto.response.user.UserStatsResponse;
 import com.thv.sport.system.exception.ErrorCode;
 import com.thv.sport.system.model.User;
 import com.thv.sport.system.respository.UserRepository;
@@ -22,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,30 +35,55 @@ public class UserServiceImpl implements UserService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
     SendEmail sendEmail;
+    com.thv.sport.system.service.OrderService orderService;
+    com.thv.sport.system.respository.OrderRepository orderRepository;
 
+
+    @SuppressWarnings("checkstyle:WhitespaceAround")
     @Override
-    public ResponseEntity<ApiResponse<List<User>>> getAllUser() {
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUser(String userName) {
         try {
-            List<User> users = userRepository.findAll();
+            List<UserResponse> userResponses = new ArrayList<>();
+            List<User> users;
+
+            users = userRepository.findAllByUserNameLike(userName);
+
+            for (User u : users) {
+                UserResponse response = UserResponse.builder()
+                        .id(u.getUserId())
+                        .email(u.getEmail())
+                        .role(u.getRole())
+                        .fullName(u.getFullName())
+                        .phoneNumber(u.getPhoneNumber())
+                        .location(u.getLocation())
+                        .gender(u.getGender())
+                        .dob(u.getDob())
+                        .lockedAt(u.getLockedAt())
+                        .isLocked(u.isLocked())
+                        .createdAt(u.getCreatedAt())
+                        .lastSignInAt(u.getLastSignInAt())
+                        .build();
+                userResponses.add(response);
+            }
             if (users.isEmpty()) {
                 return ResponseEntity.ok()
                         .body(
-                                ApiResponse.<List<User>>builder()
+                                ApiResponse.<List<UserResponse>>builder()
                                         .message("No users found")
                                         .build()
                         );
             }
             return ResponseEntity.ok()
                     .body(
-                            ApiResponse.<List<User>>builder()
+                            ApiResponse.<List<UserResponse>>builder()
                                     .message("Successfully retrieved users")
-                                    .result(users)
+                                    .result(userResponses)
                                     .build()
                     );
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(
-                            ApiResponse.<List<User>>builder()
+                            ApiResponse.<List<UserResponse>>builder()
                                     .message("Have error: " + e.getMessage())
                                     .build());
         }
@@ -272,6 +299,7 @@ public class UserServiceImpl implements UserService {
                     .confirmedAt(LocalDateTime.now())
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
+                    .isLocked(Constants.TrueFalseValue.FALSE)
                     .role(request.getRole())
                     .dob(request.getDob())
                     .build();
@@ -308,9 +336,10 @@ public class UserServiceImpl implements UserService {
                                         .build()
                         );
             }
-            User user = userRepository.findById(userId).get();
+            User user = userRepository.findById(userId).orElseThrow();
 
             user.setLockedAt(LocalDateTime.now());
+            user.setLocked(Constants.TrueFalseValue.TRUE);
 
             userRepository.save(user);
 
@@ -329,6 +358,42 @@ public class UserServiceImpl implements UserService {
                                         .message("Lock user have error: " + e.getMessage())
                                         .build());
             }
+        }
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<String>> unlockUserAdminRole(Long userId) {
+        try {
+            if (!userRepository.existsById(userId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(
+                                ApiResponse.<String>builder()
+                                        .code(ErrorCode.USER_NOT_EXISTED.getCode())
+                                        .message(ErrorCode.USER_NOT_EXISTED.getMessage())
+                                        .build()
+                        );
+            }
+
+            User user = userRepository.findById(userId).orElseThrow();
+
+            user.setLocked(Constants.TrueFalseValue.FALSE);
+            user.setLockedAt(null);
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok()
+                    .body(
+                            ApiResponse.<String>builder()
+                                    .message("Unlocked user have id: " + userId)
+                                    .build()
+                    );
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(
+                            ApiResponse.<String>builder()
+                                    .message("Unlock user have error: " + e.getMessage())
+                                    .build());
         }
     }
 
@@ -437,5 +502,90 @@ public class UserServiceImpl implements UserService {
                                         .build())
                                 .build()
                 );
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<UserStatsResponse>> getUserStats(int days) {
+        try {
+            LocalDateTime since = LocalDateTime.now().minusDays(days <= 0 ? 2 : days);
+            UserStatsResponse stats = userRepository.getUserStatsSince(since);
+
+            return ResponseEntity.ok(
+                    ApiResponse.<UserStatsResponse>builder()
+                            .result(stats)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error getting user stats", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(
+                            ApiResponse.<UserStatsResponse>builder()
+                                    .message("Get user stats have error: " + e.getMessage())
+                                    .build()
+                    );
+        }
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<com.thv.sport.system.dto.response.user.UserDetailResponse>> getUserDetail(Long userId) {
+        try {
+            // 1. Get user info (reuse existing logic)
+            if (!userRepository.existsById(userId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.<com.thv.sport.system.dto.response.user.UserDetailResponse>builder()
+                                .code(com.thv.sport.system.exception.ErrorCode.USER_NOT_EXISTED.getCode())
+                                .message(com.thv.sport.system.exception.ErrorCode.USER_NOT_EXISTED.getMessage())
+                                .build());
+            }
+
+            ResponseEntity<ApiResponse<com.thv.sport.system.dto.response.user.UserResponse>> userRespEntity = this.getUserById(userId);
+            com.thv.sport.system.dto.response.user.UserResponse userInfo = null;
+            if (userRespEntity != null && userRespEntity.getBody() != null) {
+                userInfo = userRespEntity.getBody().getResult();
+            }
+
+            // 2. Get latest 3 orders for user by calling orderService
+            ResponseEntity<ApiResponse<org.springframework.data.domain.Page<com.thv.sport.system.dto.response.order.OrderResponse>>> ordersResp =
+                    orderService.getAllOrders(userId, 0, 3);
+
+            java.util.List<com.thv.sport.system.dto.response.order.OrderResponse> orders = new java.util.ArrayList<>();
+            double totalAmount = 0.0;
+            Integer totalOrders = 0;
+
+            if (ordersResp != null && ordersResp.getBody() != null && ordersResp.getBody().getResult() != null) {
+                org.springframework.data.domain.Page<com.thv.sport.system.dto.response.order.OrderResponse> page = ordersResp.getBody().getResult();
+                orders = page.getContent();
+                java.math.BigDecimal sum = java.math.BigDecimal.ZERO;
+                for (com.thv.sport.system.dto.response.order.OrderResponse or : orders) {
+                    if (or.getTotalAmount() != null) {
+                        sum = sum.add(or.getTotalAmount());
+                    }
+                }
+                totalAmount = sum.doubleValue();
+                // total number of orders for this user (from paged result)
+                totalOrders = orderRepository.getNumberOfOrdersByUserId(userId);
+            }
+
+            com.thv.sport.system.dto.response.user.UserDetailResponse detail =
+                    com.thv.sport.system.dto.response.user.UserDetailResponse.builder()
+                            .userInfo(userInfo)
+                            .orders(orders)
+                            .totalAmount(totalAmount)
+                            .totalOrders(totalOrders)
+                            .build();
+
+            return ResponseEntity.ok(
+                    ApiResponse.<com.thv.sport.system.dto.response.user.UserDetailResponse>builder()
+                                    .message("Get user detail successfully")
+                                            .result(detail)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error getting user detail", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.<com.thv.sport.system.dto.response.user.UserDetailResponse>builder()
+                            .message("Get user detail have error: " + e.getMessage())
+                            .build());
+        }
     }
 }
