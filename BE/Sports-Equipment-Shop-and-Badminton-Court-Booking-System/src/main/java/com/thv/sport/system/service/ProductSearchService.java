@@ -2,6 +2,7 @@ package com.thv.sport.system.service;
 
 import com.thv.sport.system.dto.SearchResultDTO;
 import com.thv.sport.system.dto.response.product.ProductDocument;
+import com.thv.sport.system.model.Product;
 
 import java.io.IOException;
 import java.util.List;
@@ -11,6 +12,8 @@ public interface ProductSearchService {
 
     // Đồng bộ toàn bộ product từ Postgres sang Elasticsearch
     Iterable<ProductDocument> syncAllProducts();
+
+    ProductDocument syncProduct(Product product);
 
     List<ProductDocument> searchByName(String keyword);
 

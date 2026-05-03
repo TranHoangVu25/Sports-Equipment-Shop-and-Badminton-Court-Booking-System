@@ -106,6 +106,16 @@ public class Constants {
     }
 
     /**
+     * Numeric codes used when changing order status from API
+     * 0 = pending, 1 = success, 2 = cancelled
+     */
+    public static class OrderAction {
+        public static final int TO_PENDING = 0;
+        public static final int TO_SUCCESS = 1;
+        public static final int TO_CANCELLED = 2;
+    }
+
+    /**
      * Booking Status Constants
      */
     public static class BookingStatus {

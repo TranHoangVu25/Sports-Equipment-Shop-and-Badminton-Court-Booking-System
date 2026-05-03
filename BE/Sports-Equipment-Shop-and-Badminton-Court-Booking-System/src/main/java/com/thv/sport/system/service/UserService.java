@@ -30,7 +30,8 @@ public interface UserService {
 
     ResponseEntity<ApiResponse<String>> unlockUserAdminRole(Long userId);
 
-    ResponseEntity<ApiResponse<UserResponse>> getUserById(Long userId);
+
+        ResponseEntity<ApiResponse<UserResponse>> getUserById(Long userId);
 
     ResponseEntity<ApiResponse<UserResponse>> getUserProfile(Long userId);
 

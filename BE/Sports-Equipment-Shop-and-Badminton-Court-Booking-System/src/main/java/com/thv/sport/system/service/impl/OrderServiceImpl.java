@@ -2,6 +2,7 @@ package com.thv.sport.system.service.impl;
 
 import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.common.DateUtil;
+import com.thv.sport.system.common.MessageUtils;
 import com.thv.sport.system.dto.request.order.OrderRequest;
 import com.thv.sport.system.dto.response.ApiResponse;
 import com.thv.sport.system.dto.response.order.CheckoutResponse;
@@ -32,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -145,43 +146,123 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(Long userId, int page, int size) {
-        List<OrderResponse> orderResponseList = new ArrayList<>();
-        List<OrderItemResponse> orderItemList = new ArrayList<>();
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> changeOrderStatus(Long orderId, Integer isConfirm) {
+        try {
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        Pageable pageable = PageRequest.of(page, size);
-
-//        Page<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
-        Page<Order> orders = orderRepository.findAllByUser_UserIdOrderByCreatedAtDesc(userId, pageable);
-
-        for (Order order : orders.getContent()) {
-            orderItemList.clear();
-            for (OrderItem orderItem : order.getOrderItems()) {
-                orderItemList.add(OrderItemResponse.builder()
-                        .productName(orderItem.getProduct().getName())
-                        .quantity(orderItem.getQuantity())
-                        .price(orderItem.getPrice())
-                        .sku(orderItem.getSku())
-                        .size(orderItem.getSize())
-                        .imgUrl(orderItem.getProduct().getProductImages().getFirst().getImageUrl())
-                        .build());
+            if (isConfirm == null) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.<String>builder()
+                                .message(MessageUtils.getMessage("common.failed"))
+                                .build());
             }
-            String orderId = DateUtil.formatToDDMMYYYYHHMMSS(order.getCreatedAt()) + "_" + order.getOrderId();
-            OrderResponse response = OrderResponse.builder()
-                    .orderId(orderId)
-                    .createdAt(order.getCreatedAt())
-                    .locationDetail(order.getLocationDetail())
-                    .totalAmount(order.getTotalAmount())
-                    .status(order.getStatus())
-                    .recipient(order.getRecipient())
-                    .phoneNumber(order.getPhoneNumber())
-                    .orderItems(orderItemList)
-                    .build();
-            orderResponseList.add(response);
-        }
 
-        Page<OrderResponse> responses = new PageImpl<>(
-                orderResponseList, pageable, orders.getTotalElements());
+            // If the order has a Stripe payment, do not allow status change
+            List<Payment> payments = paymentRepository.findByOrderId(orderId);
+            if (payments != null && !payments.isEmpty()) {
+                boolean hasStripe = payments.stream()
+                        .anyMatch(p -> p.getPaymentMethod() != null &&
+                                p.getPaymentMethod().equals(Constants.CheckoutMethod.STRIPE));
+                if (hasStripe) {
+                    String msg = MessageUtils.getMessage("order.change.status.paid");
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.<String>builder()
+                                    .message(msg)
+                                    .build());
+                }
+            }
+
+            switch (isConfirm) {
+                case Constants.OrderAction.TO_SUCCESS -> order.setStatus(Constants.OrderStatus.SUCCESS);
+                case Constants.OrderAction.TO_PENDING -> order.setStatus(Constants.OrderStatus.PENDING);
+                case Constants.OrderAction.TO_CANCELLED -> order.setStatus(Constants.OrderStatus.CANCELLED);
+                default -> {
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.<String>builder()
+                                    .message("Invalid isConfirm code. Allowed: 0(pending),1(success),2(cancelled)")
+                                    .build());
+                }
+            }
+
+            order.setUpdatedAt(LocalDateTime.now());
+            orderRepository.save(order);
+
+            return ResponseEntity.ok(
+                    ApiResponse.<String>builder()
+                            .message("Order status updated successfully")
+                            .result("ok")
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error updating order status", e);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.<String>builder()
+                            .message("Error updating order status: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders
+            (Long userId, int page, int size, Boolean isAdmin, String recipient) {
+        Page<OrderResponse> responses = null;
+        try {
+            List<OrderResponse> orderResponseList = new ArrayList<>();
+            List<OrderItemResponse> orderItemList = new ArrayList<>();
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            new PageImpl<>(new ArrayList<>());
+            Page<Order> orders;
+
+            if (isAdmin) {
+                orders = orderRepository.findAllByOrderByCreatedAtDesc(recipient, pageable);
+            } else {
+                orders = orderRepository.findAllByUser_UserIdOrderByCreatedAtDesc(userId, pageable);
+            }
+
+            if (!ObjectUtils.isEmpty(orders)) {
+
+                for (Order order : orders.getContent()) {
+                    orderItemList.clear();
+                    for (OrderItem orderItem : order.getOrderItems()) {
+                        orderItemList.add(OrderItemResponse.builder()
+                                .productName(orderItem.getProduct().getName())
+                                .quantity(orderItem.getQuantity())
+                                .price(orderItem.getPrice())
+                                .sku(orderItem.getSku())
+                                .size(orderItem.getSize())
+                                .imgUrl(orderItem.getProduct().getProductImages().getFirst().getImageUrl())
+                                .build());
+                    }
+                    String orderId = DateUtil.formatToDDMMYYYYHHMMSS(order.getCreatedAt()) + "_" + order.getOrderId();
+                    OrderResponse response = OrderResponse.builder()
+                            .orderId(orderId)
+                            .createdAt(order.getCreatedAt())
+                            .locationDetail(order.getLocationDetail())
+                            .totalAmount(order.getTotalAmount())
+                            .status(order.getStatus())
+                            .recipient(order.getRecipient())
+                            .phoneNumber(order.getPhoneNumber())
+                            .orderItems(orderItemList)
+                            .build();
+                    orderResponseList.add(response);
+                }
+            }
+
+            responses = new PageImpl<>(
+                    orderResponseList, pageable, orders.getTotalElements());
+            return ResponseEntity.ok(
+                    ApiResponse.<Page<OrderResponse>>builder()
+                            .message("Get orders successfully")
+                            .result(responses)
+                            .build()
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return ResponseEntity.ok(
                 ApiResponse.<Page<OrderResponse>>builder()
                         .message("Get orders successfully")
@@ -190,11 +271,11 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId, Long userId) {
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId) {
         List<OrderItemResponse> orderItemResponseList = new ArrayList<>();
 
         Order order = orderRepository
-                .findOrderByOrderIdAndUserId(orderId, userId)
+                .findOrderByOrderIdAndUserId(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         List<Long> proIds = order.getOrderItems().stream()
