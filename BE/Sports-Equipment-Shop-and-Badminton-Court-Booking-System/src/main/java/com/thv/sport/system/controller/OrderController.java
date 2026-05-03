@@ -17,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -46,7 +47,18 @@ public class OrderController {
             @RequestParam(defaultValue = "6") int size
     ) {
         Long userId = Long.valueOf(user.getUserId());
-        return orderService.getAllOrders(userId, page, size);
+        return orderService.getAllOrders(userId, page, size, false, null);
+    }
+
+    @GetMapping("/get-all-list-order")
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrdersAdmin(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) String recipient
+    ) {
+        Long userId = Long.valueOf(user.getUserId());
+        return orderService.getAllOrders(userId, page, size, true, recipient);
     }
 
     @PostMapping("/checkout-stripe-url")
@@ -79,6 +91,14 @@ public class OrderController {
             @PathVariable("orderId") Long orderId
     ) {
         Long userId = Long.valueOf(user.getUserId());
-        return orderService.getOrderDetail(orderId, userId);
+        return orderService.getOrderDetail(orderId);
+    }
+
+    @PutMapping("/change-order-status/{orderId}")
+    public ResponseEntity<ApiResponse<String>> changeOrderStatus(
+            @RequestParam Integer isConfirm,
+            @PathVariable("orderId") Long orderId
+    ) {
+        return orderService.changeOrderStatus(orderId, isConfirm);
     }
 }

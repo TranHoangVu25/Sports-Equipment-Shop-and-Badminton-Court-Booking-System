@@ -10,8 +10,11 @@ import org.springframework.http.ResponseEntity;
 public interface OrderService {
     ResponseEntity<ApiResponse<CheckoutResponse>> checkout(Long userId, OrderRequest request);
 
-    ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(Long userId, int page, int size);
+    ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders
+            (Long userId, int page, int size, Boolean isAdmin, String userName);
 
-    ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId, Long userId);
+    ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(Long orderId);
+
+    ResponseEntity<ApiResponse<String>> changeOrderStatus(Long orderId, Integer isConfirm);
 
     }

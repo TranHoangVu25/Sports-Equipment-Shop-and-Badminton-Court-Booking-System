@@ -61,7 +61,7 @@ public class ProductController extends BaseController {
             @Valid @RequestBody ProductCreateRequest request) {
         try {
             ProductResponse response = productService.createProduct(request);
-            return createdResponse(response, "SUCCESS.CREATE");
+            return createdResponse(response, "common.success");
         } catch (Exception e) {
             return internalErrorResponse("Error creating product: " + e.getMessage());
         }
@@ -159,7 +159,7 @@ public class ProductController extends BaseController {
      * @param request ProductCreateRequest containing updated product details
      * @return ResponseEntity with BaseResponse<ProductResponse> and HTTP 200 OK status
      */
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     @Operation(summary = "Update product by ID",
             description = "Updates an existing product with new details and images.")
     @ApiResponses(value = {
@@ -178,7 +178,7 @@ public class ProductController extends BaseController {
             if (product == null) {
                 return notFoundResponse("Product with ID " + id + " not found");
             }
-            return successResponse(product, "SUCCESS.UPDATE");
+            return successResponse(product, "common.success");
         } catch (Exception e) {
             return internalErrorResponse("Error updating product: " + e.getMessage());
         }

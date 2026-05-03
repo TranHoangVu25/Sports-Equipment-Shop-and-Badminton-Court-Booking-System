@@ -15,6 +15,7 @@ import com.thv.sport.system.model.ProductVariant;
 import com.thv.sport.system.respository.ProductImageRepository;
 import com.thv.sport.system.respository.ProductRepository;
 import com.thv.sport.system.respository.ProductVariantRepository;
+import com.thv.sport.system.service.ProductSearchService;
 import com.thv.sport.system.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of IProductService interface
@@ -41,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final ProductSearchService productSearchService;
 
     @Override
     public ProductResponse createProduct(ProductCreateRequest request) {
@@ -95,8 +100,104 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public ProductResponse updateProduct(Long productId, ProductCreateRequest request) {
-        return null;
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        // update basic fields
+        product.setName(request.getName() != null ? request.getName() : product.getName());
+        product.setPrice(request.getPrice() != null ? request.getPrice() : product.getPrice());
+        product.setPriceCurrency(request.getPriceCurrency() != null ? request.getPriceCurrency() : product
+                .getPriceCurrency());
+        product.setDescription(request.getDescription() != null ? request.getDescription() : product.getDescription());
+        product.setQuantity(request.getQuantity() != null ? request.getQuantity() : product.getQuantity());
+        product.setStatus(request.getStatus() != null ? request.getStatus() : product.getStatus());
+        product.setBrand(request.getBrand() != null ? request.getBrand() : product.getBrand());
+        product.setMainCategory(request.getMainCategory() != null ? request.getMainCategory() : product
+                .getMainCategory());
+        product.setSubCategory(request.getSubCategory() != null ? request.getSubCategory() : product.getSubCategory());
+        product.setUpdatedAt(LocalDateTime.now());
+
+        Product savedProduct = productRepository.save(product);
+
+        // If request contains images -> delete existing by product id (batch) then insert new ones
+        if (request.getImages() != null) {
+            productImageRepository.deleteByProductId(savedProduct.getProductId());
+
+            List<ProductImage> newImages = request.getImages().stream()
+                    .filter(url -> url != null && !url.isBlank())
+                    .distinct()
+                    .map(url -> ProductImage.builder()
+                            .imageUrl(url)
+                            .product(savedProduct)
+                            .build())
+                    .toList();
+
+            if (!newImages.isEmpty()) productImageRepository.saveAll(newImages);
+        }
+
+        // If request contains size variants -> delete existing variants by product id then insert new ones
+        if (request.getSize() != null) {
+            productVariantRepository.deleteByProductId(savedProduct.getProductId());
+
+            String sizeType = detectSizeType(savedProduct.getMainCategory());
+
+            // normalize + dedupe sizes
+            Map<String, ProductSizeResponse> uniqueSizes = request.getSize().stream()
+                    .filter(sizeReq -> sizeReq.getSize() != null && !sizeReq.getSize().isBlank())
+                    .collect(Collectors.toMap(
+                            s -> s.getSize().trim().toUpperCase(),
+                            s -> s,
+                            (a, b) -> a,
+                            LinkedHashMap::new
+                    ));
+
+            List<ProductVariant> variants = uniqueSizes.values().stream()
+                    .map(sizeReq -> ProductVariant.builder()
+                            .product(savedProduct)
+                            .sku(generateSku(savedProduct.getProductId(), sizeType, sizeReq.getSize()))
+                            .sizeValue(sizeReq.getSize())
+                            .sizeType(sizeType)
+                            .quantity(sizeReq.getQuantity())
+                            .status(getStockStatus(sizeReq.getQuantity()))
+                            .build())
+                    .toList();
+
+            if (!variants.isEmpty()) productVariantRepository.saveAll(variants);
+        }
+
+        productSearchService.syncProductToElasticsearch(savedProduct.getProductId());
+
+        // Build response
+        List<String> imgUrls = savedProduct.getProductImages() != null
+                ? savedProduct.getProductImages().stream().map(ProductImage::getImageUrl).toList()
+                : new ArrayList<>();
+
+        List<ProductSizeResponse> sizeResponses = savedProduct.getProductVariants() != null
+                ? savedProduct.getProductVariants().stream()
+                .map(v -> ProductSizeResponse.builder()
+                        .size(v.getSizeValue())
+                        .quantity(v.getQuantity())
+                        .build())
+                .toList()
+                : new ArrayList<>();
+
+        return ProductResponse.builder()
+                .productId(savedProduct.getProductId())
+                .name(savedProduct.getName())
+                .price(savedProduct.getPrice())
+                .priceCurrency(savedProduct.getPriceCurrency())
+                .description(savedProduct.getDescription())
+                .quantity(savedProduct.getQuantity())
+                .status(savedProduct.getStatus())
+                .brand(savedProduct.getBrand())
+                .mainCategory(savedProduct.getMainCategory())
+                .subCategory(savedProduct.getSubCategory())
+                .images(imgUrls)
+                .sizes(sizeResponses)
+                .colors(request.getColors() != null ? request.getColors() : new ArrayList<>())
+                .build();
     }
 
 

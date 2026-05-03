@@ -56,6 +56,12 @@ public class ProductSearchServiceImpl implements ProductSearchService {
     }
 
     @Override
+    public ProductDocument syncProduct(Product product) {
+        ProductDocument document = productSearchMapper.toDocument(product);
+        return productSearchRepository.save(document);
+    }
+
+    @Override
     public List<ProductDocument> searchByName(String keyword) {
         return List.of();
     }

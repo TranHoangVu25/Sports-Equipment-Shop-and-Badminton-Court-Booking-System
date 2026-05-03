@@ -15,17 +15,31 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // find all order in system
-    Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
-
+    @Query("""
+    SELECT o
+    FROM Order o
+    WHERE (:recipient IS NULL OR :recipient = '' 
+           OR LOWER(o.recipient) LIKE LOWER(CONCAT('%', :recipient, '%')))
+    ORDER BY o.createdAt DESC
+""")
+    Page<Order> findAllByOrderByCreatedAtDesc(
+            @org.springframework.data.repository.query.Param("recipient") String recipient,
+            Pageable pageable
+    );
     //find order by user id
     Page<Order> findAllByUser_UserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     List<Order> findByUserUserIdOrderByCreatedAtDesc(Long userId);
 
-    @Query("SELECT o FROM Order o WHERE o.orderId = :orderId AND o.user.userId = :userId")
+    @Query("SELECT o FROM Order o WHERE o.orderId = :orderId")
     Optional<Order> findOrderByOrderIdAndUserId(
-            @Param("orderId") Long orderId,
-            @Param("userId") Long userId
+            @Param("orderId") Long orderId
+//            @Param("userId") Long userId
+    );
+
+    @Query("SELECT o FROM Order o WHERE o.orderId = :orderId ")
+    Optional<Order> findOrderByOrderId(
+            @Param("orderId") Long orderId
     );
 
     @Query("SELECT count(o) FROM Order o  WHERE o.user.userId = :userId")

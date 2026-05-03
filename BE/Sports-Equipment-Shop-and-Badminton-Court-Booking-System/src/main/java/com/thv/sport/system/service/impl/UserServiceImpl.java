@@ -546,7 +546,7 @@ public class UserServiceImpl implements UserService {
 
             // 2. Get latest 3 orders for user by calling orderService
             ResponseEntity<ApiResponse<org.springframework.data.domain.Page<com.thv.sport.system.dto.response.order.OrderResponse>>> ordersResp =
-                    orderService.getAllOrders(userId, 0, 3);
+                    orderService.getAllOrders(userId, 0, 3, false, null);
 
             java.util.List<com.thv.sport.system.dto.response.order.OrderResponse> orders = new java.util.ArrayList<>();
             double totalAmount = 0.0;
