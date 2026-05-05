@@ -122,7 +122,6 @@ public class Constants {
         public static final String PENDING = "pending";
         public static final String CONFIRMED = "confirmed";
         public static final String CANCELLED = "cancelled";
-        public static final String COMPLETED = "completed";
     }
 
     /**
@@ -230,6 +229,10 @@ public class Constants {
     public static class TrueFalseValue {
         public static final java.lang.Boolean TRUE = Boolean.TRUE;
         public static final java.lang.Boolean FALSE = Boolean.FALSE;
+    }
+
+    public static class TtlTIme {
+        public static final Integer TIME = 10;
     }
 }
 

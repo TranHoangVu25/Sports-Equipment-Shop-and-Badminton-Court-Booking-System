@@ -21,6 +21,7 @@ import com.thv.sport.system.service.BookingService;
 import com.thv.sport.system.service.MomoCheckoutService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -91,7 +92,18 @@ public class BookingServiceImpl implements BookingService {
             LocalDateTime now = LocalDateTime.now();
 
             // =========================
-            // 1. PRELOAD COURT
+            // 0. CHECK EXISTING BOOKING (🔥 NEW)
+            // =========================
+            List<Booking> list = bookingRepository.findPendingBookings(
+                    userId,
+                    Constants.PaymentStatus.PENDING,
+                    now
+            );
+            Booking booking = list.isEmpty() ? null : list.getFirst();
+            boolean isNewBooking = (booking == null);
+
+            // =========================
+            // 1. PRELOAD COURT (chỉ khi tạo mới)
             // =========================
             List<Long> courtIds = request.getItems().stream()
                     .map(BookingItemRequest::getCourtId)
@@ -126,7 +138,6 @@ public class BookingServiceImpl implements BookingService {
             // =========================
             // 3. BATCH CHECK CONFLICT
             // =========================
-            // (giả sử tất cả request cùng 1 ngày, nếu không thì group theo date)
             LocalDate bookingDate = request.getItems().getFirst().getBookingDate();
 
             LocalTime minStart = request.getItems().stream()
@@ -152,11 +163,20 @@ public class BookingServiceImpl implements BookingService {
                     ));
 
             // =========================
-            // 4. CREATE BOOKING
+            // 4. CREATE / UPDATE BOOKING
             // =========================
-            Booking booking = new Booking();
+            if (isNewBooking) {
+                booking = new Booking();
             booking.setUser(user);
-            booking.setStatus(Constants.PaymentStatus.PENDING);
+                booking.setStatus(Constants.BookingStatus.PENDING);
+                booking.setExpiredAt(now.plusMinutes(Constants.TtlTIme.TIME));
+                booking.setCreatedAt(now);
+            } else {
+                // 🔥 refresh TTL
+                booking.setExpiredAt(now.plusMinutes(Constants.TtlTIme.TIME));
+                booking.getBookingItems().clear(); // reset items
+            }
+
             booking.setRecipient(request.getRecipient());
             booking.setPhoneNumber(request.getPhoneNumber());
             booking.setBookingDate(bookingDate);
@@ -166,17 +186,24 @@ public class BookingServiceImpl implements BookingService {
             BigDecimal totalAmount = BigDecimal.ZERO;
 
             // =========================
-            // 5. LOOP (NO QUERY INSIDE)
+            // 5. LOOP
             // =========================
             for (BookingItemRequest req : request.getItems()) {
 
                 Court court = courtMap.get(req.getCourtId());
 
-                // ===== check conflict in-memory =====
+                // ===== conflict check =====
                 List<BookingItem> courtConflicts = conflictMap.get(req.getCourtId());
 
                 if (courtConflicts != null) {
                     for (BookingItem booked : courtConflicts) {
+
+                        //bỏ qua chính booking của mình
+                        if (!isNewBooking && booked.getBooking().getBookingId()
+                                .equals(booking.getBookingId())) {
+                            continue;
+                        }
+
                         if (!(req.getEndTime().isBefore(booked.getStartTime()) ||
                                 req.getStartTime().isAfter(booked.getEndTime()))) {
 
@@ -219,7 +246,7 @@ public class BookingServiceImpl implements BookingService {
             Booking savedBooking = bookingRepository.save(booking);
 
             // =========================
-            // 6. PAYMENT
+            // 6. ALWAYS CREATE NEW PAYMENT
             // =========================
             BookingPayment payment = BookingPayment.builder()
                     .booking(savedBooking)
@@ -236,6 +263,7 @@ public class BookingServiceImpl implements BookingService {
             // 7. CALL MOMO
             // =========================
             return momoCheckoutService.createPayment(savedBooking, payment, userId);
+
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -276,35 +304,81 @@ public class BookingServiceImpl implements BookingService {
             LocalTime start,
             LocalTime end
     ) {
+        try {
+            // Validate input time range
+            if (start == null || end == null || !start.isBefore(end)) {
+                throw new RuntimeException("invalid.time.range");
+            }
 
-        BigDecimal total = BigDecimal.ZERO;
+            BigDecimal total = BigDecimal.ZERO;
+            LocalTime cursor = start;
 
-        LocalTime cursor = start;
+            // Iterate through the time range in 30-minute steps
+            while (cursor.isBefore(end)) {
 
-        while (cursor.isBefore(end)) {
+                // Determine next time slot (30 minutes)
+                LocalTime next = cursor.plusMinutes(30);
+                if (next.isAfter(end)) {
+                    next = end;
+                }
 
-            LocalTime next = cursor.plusHours(1);
+                LocalTime current = cursor;
 
-            LocalTime finalCursor = cursor;
-            PricingRule matched = rules.stream()
-                    .filter(r -> {
+                // Find the applicable pricing rule for the current time slot
+                PricingRule matched = rules.stream()
+                        .filter(r -> {
 
-                        if (r.getSpecificDate() != null) {
-                            if (!r.getSpecificDate().equals(date)) return false;
-                        } else {
-                            if (!r.getDayOfWeek().equals(date.getDayOfWeek().getValue())) return false;
-                        }
+                            // If a specific date rule exists, it has higher priority
+                            if (r.getSpecificDate() != null) {
+                                if (!r.getSpecificDate().equals(date)) return false;
+                            } else {
+                                // Otherwise, match by day of week
+                                if (!r.getDayOfWeek().equals(date.getDayOfWeek().getValue())) return false;
+                            }
 
-                        return !finalCursor.isBefore(r.getStartTime()) &&
-                                finalCursor.isBefore(r.getEndTime());
-                    }).max(Comparator.comparing(PricingRule::getPriority))
-                    .orElseThrow(() -> new RuntimeException("No pricing rule"));
+                            // Check if current time falls within rule time range
+                            return !current.isBefore(r.getStartTime()) &&
+                                    current.isBefore(r.getEndTime());
+                        })
+                        // Select the rule with the highest priority
+                        .max(Comparator.comparing(PricingRule::getPriority))
+                        .orElseThrow(() -> new RuntimeException("No pricing rule"));
 
-            total = total.add(matched.getPricePerHour());
+                // Calculate duration of this slot in minutes
+                long minutes = java.time.Duration.between(cursor, next).toMinutes();
 
-            cursor = next;
+                // Convert hourly price to per-minute price
+                BigDecimal pricePerMinute = matched.getPricePerHour()
+                        .divide(BigDecimal.valueOf(60), 4, java.math.RoundingMode.HALF_UP);
+
+                // Calculate price for this slot
+                BigDecimal slotPrice = pricePerMinute.multiply(BigDecimal.valueOf(minutes));
+
+                // Add to total
+                total = total.add(slotPrice);
+
+                // Move to next slot
+                cursor = next;
+            }
+
+            // Round final result to integer (VND currency)
+            return total.setScale(0, java.math.RoundingMode.HALF_UP);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
+    }
 
-        return total;
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void cancelExpiredBooking() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        bookingRepository.cancelExpiredBookings(
+                Constants.PaymentStatus.PENDING,
+                now
+        );
     }
 }

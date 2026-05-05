@@ -59,8 +59,14 @@ public class Booking {
     @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "expired_at")
+    private LocalDateTime expiredAt;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
     @JsonManagedReference

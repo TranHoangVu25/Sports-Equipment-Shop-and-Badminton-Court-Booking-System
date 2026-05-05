@@ -2,6 +2,7 @@ package com.thv.sport.system.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thv.sport.system.common.Constants;
 import com.thv.sport.system.config.MomoConfig;
 import com.thv.sport.system.dto.request.order.MomoCreatePaymentRequest;
 import com.thv.sport.system.dto.request.order.MomoIpnRequest;
@@ -188,16 +189,22 @@ public class MomoCheckoutServiceImpl implements MomoCheckoutService {
                 payment.setProviderPaymentId(String.valueOf(ipn.getTransId()));
                 payment.setUpdatedAt(LocalDateTime.now());
 
-                booking.setStatus("PAID");
+                booking.setStatus(Constants.BookingStatus.CONFIRMED);
                 booking.setUpdatedAt(LocalDateTime.now());
 
             } else {
+
                 payment.setStatus("FAILED");
                 payment.setFailureReason(ipn.getMessage());
                 payment.setUpdatedAt(LocalDateTime.now());
 
-                booking.setStatus("CANCELLED");
-                booking.setUpdatedAt(LocalDateTime.now());
+                // 🔥 KHÔNG cancel ngay
+                if (booking.getExpiredAt() != null &&
+                        booking.getExpiredAt().isBefore(LocalDateTime.now())) {
+
+                    booking.setStatus(Constants.BookingStatus.CANCELLED);
+                    booking.setUpdatedAt(LocalDateTime.now());
+                }
             }
 
             bookingPaymentRepository.save(payment);

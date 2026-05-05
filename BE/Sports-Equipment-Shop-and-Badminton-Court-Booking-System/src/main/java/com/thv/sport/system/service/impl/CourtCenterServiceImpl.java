@@ -86,7 +86,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
         }
 
         //step 3: create slot for days of week
-        for (int i = 2; i <= 8; i++) {
+        for (int i = 1; i <= 7; i++) {
             CourtSlotRequest courtSlotRequest = courtSlotMap.get(i);
 
             LocalTime startTime = (courtSlotRequest != null && !ObjectUtils.isEmpty(courtSlotRequest.getStartTime()))
@@ -302,7 +302,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
             CourtSlot courtSlot = existingSlotMap.get(slotRequest.getDayOfWeek());
 
             int dayOfWeek = slotRequest.getDayOfWeek();
-            if (dayOfWeek < 2 || dayOfWeek > 8) {
+            if (dayOfWeek < 1 || dayOfWeek > 7) {
                 throw new RuntimeException("court.slot.invalid.day.of.week");
             }
 
