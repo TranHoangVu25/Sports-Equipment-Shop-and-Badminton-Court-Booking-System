@@ -21,5 +21,8 @@ public class CourtCenterResponse {
     private Integer deleted;
     private String imgUrl;
     private LocalDateTime createdAt;
-
+    private Double latitude;
+    private Double longitude;
+    private String mapUrl;
+    private Double distance;
 }

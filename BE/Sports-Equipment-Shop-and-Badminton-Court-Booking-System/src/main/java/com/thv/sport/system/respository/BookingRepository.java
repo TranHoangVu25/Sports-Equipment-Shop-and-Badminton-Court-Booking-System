@@ -1,6 +1,8 @@
 package com.thv.sport.system.respository;
 
 import com.thv.sport.system.model.Booking;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,10 +15,11 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     @Query("""
             SELECT b FROM Booking b
             WHERE b.user.userId =:userId
-            ORDER BY b.bookingDate DESC
+            ORDER BY b.bookingId DESC
             """)
-    List<Booking> findAllBookingByUserId(
-            Long userId
+    Page<Booking> findAllBookingByUserId(
+            Long userId,
+            Pageable pageable
     );
 
     @Query("""

@@ -21,6 +21,9 @@ import com.thv.sport.system.service.BookingService;
 import com.thv.sport.system.service.MomoCheckoutService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,36 +54,34 @@ public class BookingServiceImpl implements BookingService {
     private final MomoCheckoutService momoCheckoutService;
 
     @Override
-    public List<BookingResponse> getBookingList(Long userId) {
+    public Page<BookingResponse> getBookingList(Long userId, int page, int size) {
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("user.not.found"));
 
-        List<BookingResponse> responseList = new ArrayList<>();
+        Pageable pageable = PageRequest.of(page, size);
 
-        List<Booking> bookingList = bookingRepository.findAllBookingByUserId(user.getUserId());
+        Page<Booking> bookingPage =
+                bookingRepository.findAllBookingByUserId(userId, pageable);
 
-        for (Booking booking : bookingList) {
-            BookingResponse response = BookingResponse.builder()
-                    .bookingId(booking.getBookingId())
-                    .userId(user.getUserId())
-                    .userName(user.getFullName())
-                    .bookingDate(booking.getBookingDate())
-                    .totalAmount(booking.getTotalAmount())
-                    .status(booking.getStatus())
-                    .bookingItems(booking.getBookingItems())
-//                    .courtCenter(booking.getBookingItems().getFirst().getCourt().getCourtCenter())
-                    .courtCenterName(booking.getBookingItems().getFirst().getCourt().getCourtCenter().getName())
-                    .courtCenterAddress(booking.getBookingItems().getFirst().getCourt().getCourtCenter()
-                            .getLocationDetail())
-                    .courtCenterPhoneNumber(booking.getBookingItems().getFirst().getCourt().getCourtCenter()
-                            .getPhoneNumber())
-                    .build();
-
-            responseList.add(response);
-        }
-        return responseList;
+        return bookingPage.map(booking -> BookingResponse.builder()
+                .bookingId(booking.getBookingId())
+                .userId(user.getUserId())
+                .userName(user.getFullName())
+                .bookingDate(booking.getBookingDate())
+                .createdAt(booking.getCreatedAt())
+                .totalAmount(booking.getTotalAmount())
+                .status(booking.getStatus())
+                .bookingItems(booking.getBookingItems())
+                .courtCenterName(booking.getBookingItems().getFirst()
+                        .getCourt().getCourtCenter().getName())
+                .courtCenterAddress(booking.getBookingItems().getFirst()
+                        .getCourt().getCourtCenter().getLocationDetail())
+                .courtCenterPhoneNumber(booking.getBookingItems().getFirst()
+                        .getCourt().getCourtCenter().getPhoneNumber())
+                .build()
+        );
     }
-
     @Transactional
     @Override
     public String checkoutBooking(Long userId, BookingRequest request) {
@@ -286,6 +287,7 @@ public class BookingServiceImpl implements BookingService {
                 .userId(user.getUserId())
                 .userName(user.getFullName())
                 .bookingDate(booking.getBookingDate())
+                .createdAt(booking.getCreatedAt())
                 .totalAmount(booking.getTotalAmount())
                 .status(booking.getStatus())
                 .bookingItems(booking.getBookingItems())

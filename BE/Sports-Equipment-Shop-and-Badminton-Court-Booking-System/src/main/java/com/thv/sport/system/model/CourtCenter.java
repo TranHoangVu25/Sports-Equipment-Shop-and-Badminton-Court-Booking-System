@@ -52,6 +52,15 @@ public class CourtCenter {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "googleMapUrl")
+    private String googleMapUrl;
+
     //0: không xóa, 1 xóa
     @Column(name = "deleted")
     private Integer deleted;

@@ -13,11 +13,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -55,11 +57,16 @@ public class BookingController extends BaseController {
                     )
             }
     )
-    public ResponseEntity<BaseResponse<List<BookingResponse>>> getHomeProducts(
-            @AuthenticationPrincipal UserPrincipal user
+    public ResponseEntity<BaseResponse<Page<BookingResponse>>> getHomeProducts(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size
     ) {
         Long userId = Long.valueOf(user.getUserId());
-        List<BookingResponse> response = bookingService.getBookingList(userId);
+
+        Page<BookingResponse> response =
+                bookingService.getBookingList(userId, page, size);
+
         return successResponse(response, "common.success", null);
     }
 

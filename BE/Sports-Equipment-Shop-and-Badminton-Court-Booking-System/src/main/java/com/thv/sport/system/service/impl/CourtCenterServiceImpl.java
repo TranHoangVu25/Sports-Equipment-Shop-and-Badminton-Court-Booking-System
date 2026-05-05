@@ -17,6 +17,9 @@ import com.thv.sport.system.respository.CourtCenterRepository;
 import com.thv.sport.system.service.CourtCenterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -487,62 +490,117 @@ public class CourtCenterServiceImpl implements CourtCenterService {
     }
 
     @Override
-    public List<CourtCenterResponse> search() {
-        List<CourtCenter> courtCenters = courtCenterRepository.findAll();
-        List<CourtCenterResponse> courtCenterResponses = new ArrayList<>();
+    public Page<CourtCenterResponse> search(String name,  Double userLat, Double userLng, Pageable pageable) {
+        try {
 
-        List<Long> courtCenterIds = courtCenters.stream()
-                .map(CourtCenter::getCourtCenterId)
-                .toList();
+            Page<CourtCenter> courtCenterPage =
+                    courtCenterRepository.searchCourtCenter(
+                            name,
+                            Constants.DeleteFlag.FALSE,
+                            pageable
+                    );
 
-        List<CourtCenterImage> courtCenterImages = courtCenterImageRepository.findListImgByCourCenterId(courtCenterIds);
+            List<Long> courtCenterIds = courtCenterPage.getContent().stream()
+                    .map(CourtCenter::getCourtCenterId)
+                    .toList();
 
-        Map<Long, List<CourtCenterImage>> courtCenterImageMap = courtCenterImages.stream()
-                .collect(Collectors.groupingBy(image -> image.getCourtCenter().getCourtCenterId()));
+            List<CourtCenterImage> courtCenterImages =
+                    courtCenterImageRepository.findListImgByCourCenterId(courtCenterIds);
 
-        if (!ObjectUtils.isEmpty(courtCenterIds)) {
+            Map<Long, List<CourtCenterImage>> courtCenterImageMap =
+                    courtCenterImages.stream()
+                            .collect(Collectors.groupingBy(
+                                    image -> image.getCourtCenter().getCourtCenterId()
+                            ));
 
-            for (CourtCenter courtCenter : courtCenters) {
+            List<CourtCenterResponse> responses = courtCenterPage.getContent().stream()
+                    .map(courtCenter -> {
 
-                List<CourtCenterImage> imgList = courtCenterImageMap.get(courtCenter.getCourtCenterId());
+                        List<CourtCenterImage> imgList =
+                                courtCenterImageMap.get(courtCenter.getCourtCenterId());
 
-                if (ObjectUtils.isEmpty(imgList)) {
-                    continue;
-                }
+                        String thumbnailUrl = "";
 
-                String thumbnailUrl = "";
-                
-                for (CourtCenterImage image : imgList) {
-                    if (ObjectUtils.isEmpty(image.getIsThumbnail())) {
-                        continue;
-                    }
-                    if (image.getIsThumbnail()) {
-                        thumbnailUrl = image.getImageUrl();
-                    }
-                }
+                        if (!ObjectUtils.isEmpty(imgList)) {
+                            for (CourtCenterImage image : imgList) {
+                                if (Boolean.TRUE.equals(image.getIsThumbnail())) {
+                                    thumbnailUrl = image.getImageUrl();
+                                    break;
+                                }
+                            }
+                        }
 
-                CourtCenterResponse courtCenterResponse = CourtCenterResponse.builder()
-                        .courtCenterId(courtCenter.getCourtCenterId())
-                        .name(courtCenter.getName())
-                        .locationDetail(courtCenter.getLocationDetail())
-                        .phoneNumber(courtCenter.getPhoneNumber())
-                        .imgUrl(thumbnailUrl)
-                        .deleted(courtCenter.getDeleted())
-                        .createdAt(courtCenter.getCreatedAt())
-                        .build();
+                        // xử lý địa chỉ + map
+                        Double lat = courtCenter.getLatitude();
+                        Double lng = courtCenter.getLongitude();
 
-                if (!courtCenterResponse.getDeleted().equals(Constants.DeleteFlag.FALSE)) {
-                    continue;
-                }
+                        String mapUrl = null;
+                        if (lat != null && lng != null) {
+                            mapUrl = "https://www.google.com/maps?q=" + lat + "," + lng;
+                        }
 
-                courtCenterResponses.add(courtCenterResponse);
-            }
+                        Double distance = null;
+
+                        if (userLat != null && userLng != null
+                                && courtCenter.getLatitude() != null
+                                && courtCenter.getLongitude() != null) {
+
+                            distance = calculateDistance(
+                                    userLat,
+                                    userLng,
+                                    courtCenter.getLatitude(),
+                                    courtCenter.getLongitude()
+                            );
+                        }
+
+                        return CourtCenterResponse.builder()
+                                .courtCenterId(courtCenter.getCourtCenterId())
+                                .name(courtCenter.getName())
+                                .locationDetail(courtCenter.getLocationDetail())
+                                .phoneNumber(courtCenter.getPhoneNumber())
+                                .imgUrl(thumbnailUrl)
+
+                                .latitude(lat)
+                                .longitude(lng)
+                                .locationDetail(courtCenter.getLocationDetail())
+                                .mapUrl(mapUrl)
+                                .distance(distance)
+                                .deleted(courtCenter.getDeleted())
+                                .createdAt(courtCenter.getCreatedAt())
+                                .build();
+                    })
+                    .toList();
+
+            return new PageImpl<>(responses, pageable, courtCenterPage.getTotalElements());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("search.court.center.failed");
         }
-        return courtCenterResponses;
     }
-
     @Override
     public void deleteCourtCenter(List<Long> ids) {
 
+    }
+
+    private double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
+        try{
+
+        final int R = 6371; // bán kính trái đất (km)
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        log.info("call caculate");
+        return R * c; // km
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 }
