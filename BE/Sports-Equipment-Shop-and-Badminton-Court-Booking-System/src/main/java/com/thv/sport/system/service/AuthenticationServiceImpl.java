@@ -87,8 +87,7 @@ public class AuthenticationServiceImpl {
                 .build();
     }
 
-    public ResponseEntity<ApiResponse<AuthenticationResponse>> authenticate(AuthenticationRequest request)
-            throws Exception {
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> authenticate(AuthenticationRequest request) {
         try {
             var user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new Exception(ErrorCode.USER_NOT_EXISTED.getMessage()));

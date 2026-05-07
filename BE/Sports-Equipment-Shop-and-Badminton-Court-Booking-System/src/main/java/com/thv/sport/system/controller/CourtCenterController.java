@@ -29,8 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RestController
@@ -152,17 +150,16 @@ public class CourtCenterController extends BaseController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-try{
+        try {
+            Pageable pageable = PageRequest.of(page, size);
 
-        Pageable pageable = PageRequest.of(page, size);
+            Page<CourtCenterResponse> response =
+                    courtCenterService.search(name, userLat, userLng, pageable);
 
-        Page<CourtCenterResponse> response =
-                courtCenterService.search(name,  userLat, userLng, pageable);
-
-        return successResponse(response, "common.success", null);
-    } catch (Exception e) {
-    throw new RuntimeException(e);
-}
+            return successResponse(response, "common.success", null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

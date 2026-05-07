@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
     @Query("""
@@ -54,4 +53,36 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
                 AND b.expiredAt <= :now
             """)
     int cancelExpiredBookings(String status, LocalDateTime now);
+
+    // Revenue grouped by day for a given year + month (only bookings with given status)
+    @Query("""
+            SELECT DAY(b.createdAt),
+                   COALESCE(SUM(b.totalAmount),0)
+            FROM Booking b
+            WHERE YEAR(b.createdAt) = :year
+              AND MONTH(b.createdAt) = :month
+              AND b.status = :status
+            GROUP BY DAY(b.createdAt)
+            ORDER BY DAY(b.createdAt)
+    """)
+    List<Object[]> revenueByMonth(
+            Integer year,
+            Integer month,
+            String status
+    );
+
+    // Revenue grouped by month for a given year (only bookings with given status)
+    @Query("""
+            SELECT MONTH(b.createdAt),
+                   COALESCE(SUM(b.totalAmount),0)
+            FROM Booking b
+            WHERE YEAR(b.createdAt) = :year
+              AND b.status = :status
+            GROUP BY MONTH(b.createdAt)
+            ORDER BY MONTH(b.createdAt)
+    """)
+    List<Object[]> revenueByYear(
+            Integer year,
+            String status
+    );
 }

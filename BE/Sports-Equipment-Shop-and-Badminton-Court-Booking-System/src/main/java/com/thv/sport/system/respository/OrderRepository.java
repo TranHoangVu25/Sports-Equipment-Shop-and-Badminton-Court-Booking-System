@@ -46,5 +46,37 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     int getNumberOfOrdersByUserId(
             @Param("userId") Long userId
     );
+
+    // Revenue grouped by day for a given year + month (only orders with given status)
+    @Query("""
+            SELECT DAY(o.createdAt),
+                   COALESCE(SUM(o.totalAmount),0)
+            FROM Order o
+            WHERE YEAR(o.createdAt) = :year
+              AND MONTH(o.createdAt) = :month
+              AND o.status = :status
+            GROUP BY DAY(o.createdAt)
+            ORDER BY DAY(o.createdAt)
+    """)
+    List<Object[]> revenueByMonth(
+            @Param("year") Integer year,
+            @Param("month") Integer month,
+            @Param("status") String status
+    );
+
+    // Revenue grouped by month for a given year (only orders with given status)
+    @Query("""
+            SELECT MONTH(o.createdAt),
+                   COALESCE(SUM(o.totalAmount),0)
+            FROM Order o
+            WHERE YEAR(o.createdAt) = :year
+              AND o.status = :status
+            GROUP BY MONTH(o.createdAt)
+            ORDER BY MONTH(o.createdAt)
+    """)
+    List<Object[]> revenueByYear(
+            @Param("year") Integer year,
+            @Param("status") String status
+    );
 }
 
