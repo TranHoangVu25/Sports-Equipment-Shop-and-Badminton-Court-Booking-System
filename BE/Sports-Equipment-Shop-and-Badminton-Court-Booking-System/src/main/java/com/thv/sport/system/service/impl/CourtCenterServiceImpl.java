@@ -579,7 +579,21 @@ public class CourtCenterServiceImpl implements CourtCenterService {
     }
     @Override
     public void deleteCourtCenter(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new RuntimeException("court.center.ids.required");
+        }
 
+        List<CourtCenter> centersToDelete = new java.util.ArrayList<>();
+
+        for (Long id : ids) {
+            CourtCenter center = courtCenterRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("court.center.not.existed"));
+            center.setDeleted(Constants.DeleteFlag.TRUE);
+            center.setUpdatedAt(java.time.LocalDateTime.now());
+            centersToDelete.add(center);
+        }
+
+        courtCenterRepository.saveAll(centersToDelete);
     }
 
     private double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {

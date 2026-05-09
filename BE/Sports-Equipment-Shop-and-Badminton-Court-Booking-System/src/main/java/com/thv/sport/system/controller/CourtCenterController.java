@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import java.util.List;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -160,6 +161,15 @@ public class CourtCenterController extends BaseController {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @PreAuthorize("hasAuthority(T(com.thv.sport.system.enums.UserRole).ADMIN.value)")
+    @PostMapping("/delete")
+    public ResponseEntity<BaseResponse<String>> deleteCourtCenters(
+            @RequestBody List<Long> ids
+    ) {
+        courtCenterService.deleteCourtCenter(ids);
+        return successResponse("court.center.delete.success");
     }
 
 }
