@@ -490,7 +490,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
     }
 
     @Override
-    public Page<CourtCenterResponse> search(String name,  Double userLat, Double userLng, Pageable pageable) {
+    public Page<CourtCenterResponse> search(String name, Double userLat, Double userLng, Pageable pageable) {
         try {
 
             Page<CourtCenter> courtCenterPage =
@@ -577,6 +577,7 @@ public class CourtCenterServiceImpl implements CourtCenterService {
             throw new RuntimeException("search.court.center.failed");
         }
     }
+
     @Override
     public void deleteCourtCenter(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -597,20 +598,20 @@ public class CourtCenterServiceImpl implements CourtCenterService {
     }
 
     private double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
-        try{
+        try {
 
-        final int R = 6371; // bán kính trái đất (km)
+            final int R = 6371; // bán kính trái đất (km)
 
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
+            double latDistance = Math.toRadians(lat2 - lat1);
+            double lonDistance = Math.toRadians(lon2 - lon1);
 
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+            double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                    + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                    * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
 
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        log.info("call caculate");
-        return R * c; // km
+            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            log.info("call caculate");
+            return R * c; // km
 
         } catch (Exception e) {
             e.printStackTrace();

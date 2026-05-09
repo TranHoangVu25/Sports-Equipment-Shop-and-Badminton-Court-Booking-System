@@ -59,10 +59,15 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("user.not.found"));
 
-        Pageable pageable = PageRequest.of(page, size);
 
-        Page<Booking> bookingPage =
-                bookingRepository.findAllBookingByUserId(userId, pageable);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Booking> bookingPage;
+        if (Constants.Role.ADMIN.equals(user.getRole())) {
+            bookingPage = bookingRepository.findAllBooking(pageable);
+        } else {
+            bookingPage = bookingRepository.findAllBookingByUserId(userId, pageable);
+        }
+
 
         return bookingPage.map(booking -> BookingResponse.builder()
                 .bookingId(booking.getBookingId())
@@ -82,6 +87,7 @@ public class BookingServiceImpl implements BookingService {
                 .build()
         );
     }
+
     @Transactional
     @Override
     public String checkoutBooking(Long userId, BookingRequest request) {
@@ -168,7 +174,7 @@ public class BookingServiceImpl implements BookingService {
             // =========================
             if (isNewBooking) {
                 booking = new Booking();
-            booking.setUser(user);
+                booking.setUser(user);
                 booking.setStatus(Constants.BookingStatus.PENDING);
                 booking.setExpiredAt(now.plusMinutes(Constants.TtlTIme.TIME));
                 booking.setCreatedAt(now);
@@ -276,7 +282,12 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("user.not.found"));
 
-        Booking booking = bookingRepository.findBookingDetailByUserIdAndBookingId(user.getUserId(), bookingId);
+        Booking booking;
+        if (Constants.Role.ADMIN.equals(user.getRole())) {
+            booking = bookingRepository.findBookingDetailByBookingId(bookingId);
+        } else {
+            booking = bookingRepository.findBookingDetailByUserIdAndBookingId(user.getUserId(), bookingId);
+        }
 
         if (ObjectUtils.isEmpty(booking)) {
             throw new RuntimeException("booking.not.found");

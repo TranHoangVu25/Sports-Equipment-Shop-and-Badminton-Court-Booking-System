@@ -23,12 +23,29 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     @Query("""
             SELECT b FROM Booking b
+            ORDER BY b.bookingId DESC
+            """)
+    Page<Booking> findAllBooking(
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT b FROM Booking b
             WHERE b.user.userId =:userId
                         and b.bookingId =:bookingId
             ORDER BY b.bookingDate DESC
             """)
     Booking findBookingDetailByUserIdAndBookingId(
             Long userId, Long bookingId
+    );
+
+    @Query("""
+            SELECT b FROM Booking b
+            WHERE b.bookingId =:bookingId
+            ORDER BY b.bookingDate DESC
+            """)
+    Booking findBookingDetailByBookingId(
+            Long bookingId
     );
 
     @Query("""
