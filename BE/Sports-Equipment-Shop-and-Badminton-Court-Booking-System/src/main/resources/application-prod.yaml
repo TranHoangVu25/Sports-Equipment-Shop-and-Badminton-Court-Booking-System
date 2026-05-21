@@ -44,7 +44,7 @@ spring:
     fallback-to-system-locale: false
 
 server:
-  port: 8086
+  port: ${PORT:8080}
 
 jwt:
   signerKey: "3m47O+gM3Sc0lc9I5pMhfGFZMoqvbFtLoNs6Lmq9nOg="
