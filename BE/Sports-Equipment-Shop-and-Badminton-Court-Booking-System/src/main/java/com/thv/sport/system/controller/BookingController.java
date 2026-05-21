@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @RequiredArgsConstructor
 @RestController
@@ -78,5 +80,31 @@ public class BookingController extends BaseController {
         Long userId = Long.valueOf(user.getUserId());
         BookingResponse response = bookingService.getBookingDetail(bookingId, userId);
         return successResponse(response, "common.success", null);
+    }
+
+    /**
+     * Get occupied time ranges for given courts on a date within a time window
+     * status = 'confirmed' OR (status = 'pending' AND expiredAt > now)
+     */
+    @GetMapping("/occupied")
+    public ResponseEntity<BaseResponse<List<com.thv.sport.system.dto.response.booking.BookingItemResponse>>> getOccupied(
+            @RequestParam List<Long> courtIds,
+            @RequestParam String date,
+            @RequestParam String startTime,
+            @RequestParam String endTime
+    ) {
+        try {
+            LocalDate d = LocalDate.parse(date);
+            LocalTime s = LocalTime.parse(startTime);
+            LocalTime e = LocalTime.parse(endTime);
+
+            List<com.thv.sport.system.dto.response.booking.BookingItemResponse> resp = bookingService.getBookedSlots(
+                    courtIds, d, s, e
+            );
+
+            return successResponse(resp, "common.success", null);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

@@ -99,7 +99,7 @@ public class BookingServiceImpl implements BookingService {
             LocalDateTime now = LocalDateTime.now();
 
             // =========================
-            // 0. CHECK EXISTING BOOKING (🔥 NEW)
+            // 0. CHECK EXISTING BOOKING (NEW)
             // =========================
             List<Booking> list = bookingRepository.findPendingBookings(
                     userId,
@@ -179,7 +179,7 @@ public class BookingServiceImpl implements BookingService {
                 booking.setExpiredAt(now.plusMinutes(Constants.TtlTIme.TIME));
                 booking.setCreatedAt(now);
             } else {
-                // 🔥 refresh TTL
+                // refresh TTL
                 booking.setExpiredAt(now.plusMinutes(Constants.TtlTIme.TIME));
                 booking.getBookingItems().clear(); // reset items
             }
@@ -309,6 +309,44 @@ public class BookingServiceImpl implements BookingService {
                 .courtCenterPhoneNumber(booking.getBookingItems().getFirst().getCourt().getCourtCenter()
                         .getPhoneNumber())
                 .build();
+    }
+
+    @Override
+    public java.util.List<com.thv.sport.system.dto.response.booking.BookingItemResponse> getBookedSlots(
+            java.util.List<Long> courtIds,
+            java.time.LocalDate date,
+            java.time.LocalTime startTime,
+            java.time.LocalTime endTime
+    ) {
+        try {
+
+            if (courtIds == null || courtIds.isEmpty()) {
+                throw new RuntimeException("court.ids.required");
+            }
+            if (date == null || startTime == null || endTime == null) {
+                throw new RuntimeException("date.and.time.required");
+            }
+
+            java.util.List<BookingItem> items = bookingItemRepository.findConflicts(
+                    courtIds, date, startTime, endTime
+            );
+
+            return items.stream().map(bi -> com.thv.sport.system.dto.response.booking.BookingItemResponse.builder()
+                            .id(bi.getId())
+                            .courtId(bi.getCourt() != null ? bi.getCourt().getCourtId() : null)
+                            .courtName(bi.getCourt() != null ? bi.getCourt().getName() : null)
+                            .bookingDate(bi.getBookingDate())
+                            .startTime(bi.getStartTime())
+                            .endTime(bi.getEndTime())
+                            .pricePerHour(bi.getPricePerHour())
+                            .totalPrice(bi.getTotalPrice())
+                            .build())
+                    .toList();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 
     public BigDecimal calculatePrice(

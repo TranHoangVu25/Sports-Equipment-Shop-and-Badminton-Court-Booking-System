@@ -62,7 +62,8 @@ public class SendEmail {
                         + "</div>"
 
                         + "</div>"
-                        + "</div>";;
+                        + "</div>";
+        ;
 
         emailService.sendMail(email, "Chiikawa Goods Shop - Account Confirmation", htmlContent);
     }
