@@ -11,6 +11,7 @@ COPY mvnw .
 
 # Thực thi lệnh package để tạo ra file .jar trong thư mục target/
 # Giả sử bạn đã chạy `mvnw install` trên máy host để tạo ra wrapper
+RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests -Dcheckstyle.skip=true
 
 # GIAI ĐOẠN 2: RUN (Sử dụng JRE nhẹ để chạy JAR)
