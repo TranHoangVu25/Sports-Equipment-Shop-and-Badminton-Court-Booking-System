@@ -33,9 +33,7 @@ services:
       - "8086:8086"
 
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://ep-polished-sunset-aogmfnpm-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-      SPRING_DATASOURCE_USERNAME: neondb_owner
-      SPRING_DATASOURCE_PASSWORD: npg_e4wCQ5JODTnG
+      SPRING_PROFILES_ACTIVE: prod
 
     depends_on:
       elasticsearch:
