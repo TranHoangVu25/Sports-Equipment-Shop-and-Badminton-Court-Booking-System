@@ -2,22 +2,6 @@ version: '3.8'
 
 services:
 
-  app:
-    build: .
-    container_name: sport-system
-
-    ports:
-      - "8086:8086"
-
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://ep-polished-sunset-aogmfnpm-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-      SPRING_DATASOURCE_USERNAME: neondb_owner
-      SPRING_DATASOURCE_PASSWORD: npg_e4wCQ5JODTnG
-
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
     container_name: elasticsearch
@@ -35,11 +19,27 @@ services:
       - es_data:/usr/share/elasticsearch/data
 
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 20
       start_period: 60s
+
+  app:
+    build: .
+    container_name: sport-system
+
+    ports:
+      - "8086:8086"
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ep-polished-sunset-aogmfnpm-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      SPRING_DATASOURCE_USERNAME: neondb_owner
+      SPRING_DATASOURCE_PASSWORD: npg_e4wCQ5JODTnG
+
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
 
 volumes:
   es_data:
