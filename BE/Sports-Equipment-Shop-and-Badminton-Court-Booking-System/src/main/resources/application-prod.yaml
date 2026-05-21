@@ -35,7 +35,9 @@ spring:
             enable: true
           starttls.required: true
   elasticsearch:
-    uris: http://elasticsearch:9200
+    uris: ${ELASTICSEARCH_URL}
+    username: ${ELASTICSEARCH_USERNAME}
+    password: ${ELASTICSEARCH_PASSWORD}
   messages:
     basename: messages
     encoding: UTF-8
